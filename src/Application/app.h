@@ -1,4 +1,5 @@
 #pragma once
+#include <GLFW/glfw3.h>
 
 class App
 {
@@ -12,4 +13,7 @@ public:
 	App();
 
 	void init();
+
 };
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
