@@ -6,10 +6,15 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "../Helpers/Shader.h"
 
-App::App()
+App::App(int windowWidth, int windowHeight)
 {
+	this->window_width = windowWidth;
+	this->window_height = windowHeight;
 }
 
 void App::init()
@@ -53,12 +58,19 @@ void App::init()
 	// set up vertex data (and buffer(s)) and configure vertex attributes
    // ------------------------------------------------------------------
 	float vertices[] = {
-		//positions		//colors
+		//positions									//colors
 	 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,// top right
 	 0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,// bottom right
 	-0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f// bottom left
 	-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 1.0f// top left 
 	};
+
+	//float vertices[] = {
+	// 0.5f,  0.5f, 0.0f,  // top right
+	// 0.5f, -0.5f, 0.0f,  // bottom right
+	//-0.5f, -0.5f, 0.0f,  // bottom left
+	//-0.5f,  0.5f, 0.0f   // top left 
+	//};
 	unsigned int indices[] = {  // note that we start from 0!
 		0, 1, 3,   // first triangle
 		1, 2, 3    // second triangle
@@ -66,13 +78,14 @@ void App::init()
 
 	//Generate vertex array and vertex buffer for triangle render
 	unsigned int VBO, VAO, EBO;
-	glGenVertexArrays(1, &VAO);
 	//Generate Vertex Array Object
-	glBindVertexArray(VAO);
+	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	//Generate Element Buffer Object
 	glGenBuffers(1, &EBO);
 
+	//Bind VAO
+	glBindVertexArray(VAO);
 
 	// 0. copy our vertices array in a buffer for OpenGL to use
 	//Binds a buffer object to the current buffer type, only 1 can be set at one time
@@ -105,6 +118,13 @@ void App::init()
 
 		//~~ Handle Rendering ~~
 		testShader.use();
+
+		//Rotate render
+		glm::mat4 transform = glm::mat4(1.f);
+		transform = glm::translate(transform, glm::vec3(0.25f, 0.5f, 0.f));
+		transform = glm::rotate(transform, static_cast<float>(glfwGetTime()), glm::vec3(0.f, 0.f, 1.f));
+		testShader.setMat4("transform", transform);
+
 		glBindVertexArray(VAO);
 		//glDrawArrays(GL_TRIANGLES, 0, 3);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

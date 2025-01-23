@@ -10,7 +10,7 @@ public:
 	int window_height = 600;
 
 public:
-	App();
+	App(int windowWidth, int windowHeight);
 
 	void init();
 
