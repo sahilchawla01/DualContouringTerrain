@@ -45,6 +45,7 @@ void App::init()
 	glfwMakeContextCurrent(window);
 	glfwSetCursorPosCallback(window, App::MouseCallback);
 	glfwSetScrollCallback(window, App::ScrollCallback);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	//Load GLAD before any OpenGL calls, (to find function pointers for OpenGL)
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -181,11 +182,6 @@ void App::init()
 		model = glm::rotate(model, -(float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f));
 
 		glm::mat4 view = m_currentCamera->GetViewMatrix();
-		//glm::mat4 view(1.f);
-		//view = glm::translate(view, glm::vec3(0.f, 0.f, -10.f));
-
-		//glm::mat4 projection;
-		//projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
 		glm::mat4 projection = m_currentCamera->GetProjectionMatrix();
 
@@ -216,12 +212,12 @@ void App::init()
 	glfwTerminate();
 }
 
-
+//Creates all required actors for the scene
 void App::CreateInitActors()
 {
 
 	//Create camera
-	m_currentCamera = std::make_unique<ACamera>(glm::vec3(0.f, 0.f, 10.f), glm::vec3(0.f, 1.f, 0.f), settings.mouse_yaw, settings.mouse_pitch, this->window_width / this->window_height);
+	m_currentCamera = std::make_unique<ACamera>(glm::vec3(0.f, 0.f, 10.f), glm::vec3(0.f, 1.f, 0.f), settings.mouse_yaw, settings.mouse_pitch, static_cast<float>(this->window_width) / static_cast<float>(this->window_height));
 
 }
 
@@ -271,9 +267,9 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 void App::MouseCallback(GLFWwindow* window, double xposIn, double yposIn)
 {
 	//Get app pointer
-	App* appPtr = (App*)glfwGetWindowUserPointer(window);
+	App* appPtr = static_cast<App*>(glfwGetWindowUserPointer(window));
 
-	appPtr->m_currentCamera->ProcessMouseInput(xposIn, yposIn);
+	appPtr->m_currentCamera->ProcessMouseInput(static_cast<float>(xposIn), static_cast<float>(yposIn));
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
@@ -281,7 +277,7 @@ void App::MouseCallback(GLFWwindow* window, double xposIn, double yposIn)
 void App::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	//Get app pointer
-	App* appPtr = (App*)glfwGetWindowUserPointer(window);
+	App* appPtr = static_cast<App*>(glfwGetWindowUserPointer(window));
 
 	appPtr->m_currentCamera->ProcessScrollInput(static_cast<float>(xoffset), static_cast<float>(yoffset));
 }

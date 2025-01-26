@@ -27,8 +27,8 @@ public:
 private:
 	std::unique_ptr<ACamera> m_currentCamera;
 
-	int window_width = 800;
-	int window_height = 600;
+	int window_width = 1200;
+	int window_height = 1080;
 
 	float deltaTime = 0.f;
 	float lastFrameTime = 0.f;
