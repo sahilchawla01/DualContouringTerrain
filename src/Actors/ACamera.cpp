@@ -56,7 +56,7 @@ void ACamera::UpdateCameraDirectionVectors()
 
 void ACamera::UpdateProjectionMatrix()
 {
-	std::cout << "\nUpdating Projection matrix.. FOV: " << GetCameraFov() << "\t Aspect Ratio: " << cameraAspectRatio;
+	//std::cout << "\nUpdating Projection matrix.. FOV: " << GetCameraFov() << "\t Aspect Ratio: " << cameraAspectRatio;
 	//Updates the projection matrix according to new fov of camera
 	projectionMatrix = glm::perspective(glm::radians(GetCameraFov()), cameraAspectRatio, 0.1f, 100.f);
 }

@@ -37,6 +37,7 @@ private:
 private:
 	void CreateInitActors();
 	void ProcessInput(GLFWwindow* window);
+	static int GetUniqueIndexForGrid(const int x, const int y, const int z, const int gridWidth, const int gridHeight);
 	static void MouseCallback(GLFWwindow* window, double xposIn, double yposIn);
 	static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 };

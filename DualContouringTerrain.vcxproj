@@ -163,6 +163,7 @@
     <ClCompile Include="src\Actors\ACamera.cpp" />
     <ClCompile Include="src\Application\app.cpp" />
     <ClCompile Include="src\Application\glad.c" />
+    <ClCompile Include="src\Helpers\DualContouring.cpp" />
     <ClCompile Include="src\Helpers\Shader.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
@@ -170,6 +171,8 @@
     <ClInclude Include="src\Actors\AActor.h" />
     <ClInclude Include="src\Actors\ACamera.h" />
     <ClInclude Include="src\Application\app.h" />
+    <ClInclude Include="src\Helpers\DualContouring.h" />
+    <ClInclude Include="src\Helpers\Math\SDF.h" />
     <ClInclude Include="src\Helpers\Settings.h" />
     <ClInclude Include="src\Helpers\Shader.h" />
   </ItemGroup>
