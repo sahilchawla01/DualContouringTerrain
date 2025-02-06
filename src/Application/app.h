@@ -6,6 +6,7 @@
 #include "Helpers/Settings.h"
 
 class ACamera;
+class Settings;
 
 class App
 {
@@ -35,6 +36,8 @@ private:
 	float elapsedTimeSinceLaunch = 0.f;
 
 private:
+	//If any changes have occurred in settings, reflect changes
+	void PollSettings(GLFWwindow* window) const;
 	void CreateInitActors();
 	void ProcessInput(GLFWwindow* window);
 	static int GetUniqueIndexForGrid(const int x, const int y, const int z, const int gridWidth, const int gridHeight);

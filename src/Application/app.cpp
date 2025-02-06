@@ -17,6 +17,12 @@
 #include "Actors/ACamera.h"
 #include "Helpers/DualContouring.h"
 
+
+//IMGUI INCLUDES
+#include "Helpers/imgui/imgui.h"
+#include "Helpers/imgui/imgui_impl_glfw.h"
+#include "Helpers/imgui/imgui_impl_opengl3.h"
+
 App::App(int windowWidth, int windowHeight)
 {
 	this->window_width = windowWidth;
@@ -50,7 +56,7 @@ void App::init()
 	glfwMakeContextCurrent(window);
 	glfwSetCursorPosCallback(window, App::MouseCallback);
 	glfwSetScrollCallback(window, App::ScrollCallback);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(window, GLFW_CURSOR, settings.bIsCursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 
 	//Load GLAD before any OpenGL calls, (to find function pointers for OpenGL)
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -73,7 +79,7 @@ void App::init()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	//Compile Shader
-	Shader testShader("../../../src/Shaders/Test/test.vert", "../../../src/Shaders/Test/test.frag");
+	Shader litShader("../../../src/Shaders/Test/test.vert", "../../../src/Shaders/Test/test.frag");
 
 	
 	// set up vertex data (and buffer(s)) and configure vertex attributes
@@ -165,6 +171,17 @@ void App::init()
 
 	const int voxelSize = 1;
 
+
+	//Setup IMGUI
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+	ImGui_ImplOpenGL3_Init();
 	
 	//Render frames
 	while(!glfwWindowShouldClose(window))
@@ -181,9 +198,37 @@ void App::init()
 
 		//~~ Handle Input~~ 
 		ProcessInput(window);
+		PollSettings(window);
+
+		// Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		{
+			ImGui::Begin("Dual Contouring Settings!");                          // Create a window called "Hello, world!" and append into it.
+
+			//ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+			ImGui::Checkbox("Enable Cursor", &settings.bIsCursorEnabled);      // Edit bools storing our window open/close state
+			ImGui::Checkbox("Enable Debug", &settings.bIsDebugEnabled);      
+
+			//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+			ImGui::End();
+			
+		}
 
 		//~~ Handle Rendering ~~
-		testShader.use();
+		litShader.use();
+
+		//--Set directional light values--
+		//litShader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+		//litShader.setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+		//litShader.setVec3("dirLight.diffuse", glm::vec3(0.4f, 0.4f, 0.4f));
+		//litShader.setVec3("dirLight.specular", glm::vec3(0.6f, 0.6f, 0.6f));
+
+		////Set material values
+		//litShader.setFloat("mat.shine", 32.0f);
+
 
 		//Create a 3D grid
 		{
@@ -207,8 +252,6 @@ void App::init()
 
 			glm::vec3 gridCenter((gridWidth * voxelSize) / 2, (gridHeight * voxelSize )/ 2, (gridDepth * voxelSize)/ 2);
 
-			bool bIsDebugEnabled = false;
-
 			glBindVertexArray(VAO);
 
 			//Generate vertex positions
@@ -227,7 +270,7 @@ void App::init()
 						grid.emplace_back(relativePos);
 
 						//DEBUG: Spawn cube at grid position
-						if(bIsDebugEnabled)
+						if(settings.bIsDebugEnabled)
 						{
 							//std::cout << "Spawning cube at position: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z << "\n";
 							//Create MVP
@@ -241,7 +284,7 @@ void App::init()
 
 							glm::mat4 mvp = projection * view * model;
 
-							testShader.setMat4("mvp", mvp);
+							litShader.setMat4("mvp", mvp);
 							glDrawArrays(GL_TRIANGLES, 0, 36);
 						}
 
@@ -327,8 +370,10 @@ void App::init()
 
 								//Get current intersection point by using linear interpolation
 								float interpolateFactor = abs(cornerSDFValues[cornerIndex1]) / (abs(cornerSDFValues[cornerIndex1]) + abs(cornerSDFValues[cornerIndex2]));
-								glm::vec3 currIntersectionPoint = cornerPos1 + ((glm::normalize(cornerPos2 - cornerPos1)) * interpolateFactor);
+								glm::vec3 currIntersectionPoint = cornerPos1 + ((cornerPos2 - cornerPos1) * interpolateFactor);
 								intersectionPoints.push_back(currIntersectionPoint);
+
+								//TODO: SAnity check whether point is within voxel
 
 								//Calculate normal using Finite Sum Difference
 								intersectionNormals.push_back(DualContouring::CalculateSurfaceNormal(currIntersectionPoint, gridPosition, 4.f));
@@ -470,7 +515,7 @@ void App::init()
 
 			glm::mat4 mvp = projection * view * gridModelMatrix;
 
-			testShader.setMat4("mvp", mvp);
+			litShader.setMat4("mvp", mvp);
 			glDrawElements(GL_TRIANGLES, static_cast<int>(modelVertices.size()), GL_UNSIGNED_INT, 0);
 
 			//Next unbind the VAO
@@ -478,13 +523,16 @@ void App::init()
 		}
 
 
-
+		//Render the UI
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		//~~ Handle Events Polling ~~ 
 		//Swap the back buffer with the front buffer (to show new image)
 		glfwSwapBuffers(window);
 		//Check if any events have been triggered (keyboard inputs, mouse movements, etc)
 		glfwPollEvents();
+
 	}
 
 	// optional: de-allocate all resources once they've outlived their purpose:
@@ -493,8 +541,19 @@ void App::init()
 	glDeleteBuffers(1, &VBO);
 	glDeleteBuffers(1, &EBO);
 
+	//Clean up code
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
 	//Terminate the window
 	glfwTerminate();
+}
+
+void App::PollSettings(GLFWwindow* window) const
+{
+	glfwSetInputMode(window, GLFW_CURSOR, settings.bIsCursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+
 }
 
 //Creates all required actors for the scene
@@ -544,6 +603,14 @@ void App::ProcessInput(GLFWwindow* window)
 	{
 		std::cout << "\nError: Camera not present.";
 	}
+
+	//Handle cursor display
+	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+	{
+		//Flip flag
+		settings.bIsCursorEnabled = !settings.bIsCursorEnabled;
+		glfwSetInputMode(window, GLFW_CURSOR, settings.bIsCursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+	}
 }
 
 /*
@@ -559,7 +626,7 @@ void App::MouseCallback(GLFWwindow* window, double xposIn, double yposIn)
 	//Get app pointer
 	App* appPtr = static_cast<App*>(glfwGetWindowUserPointer(window));
 
-	appPtr->m_currentCamera->ProcessMouseInput(static_cast<float>(xposIn), static_cast<float>(yposIn));
+	appPtr->m_currentCamera->ProcessMouseInput(static_cast<float>(xposIn), static_cast<float>(yposIn), appPtr->settings.bIsCursorEnabled);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called

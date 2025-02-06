@@ -89,7 +89,7 @@ public:
 
 public:
 	/* -- Input handler functions --*/
-	void ProcessMouseInput(float xPos, float yPos);
+	void ProcessMouseInput(float xPos, float yPos, bool bIsCursorEnabled);
 	void ProcessKeyboardInput(ECameraMoveDirection direction, float deltaTime);
 	void ProcessScrollInput(float xOffset, float yOffset);
 

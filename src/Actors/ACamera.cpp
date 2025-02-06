@@ -152,8 +152,14 @@ void ACamera::DisableFastCamera()
 	cameraSpeed /= fastCameraSpeedMultiplier;
 }
 
-void ACamera::ProcessMouseInput(float xPos, float yPos)
+void ACamera::ProcessMouseInput(float xPos, float yPos, bool bIsCursorEnabled = false)
 {
+	//If cursor is enabled, don't move camera around
+	if (bIsCursorEnabled)
+	{
+		return;
+	}
+
 	//If mouse hasn't moved since start of the window
 	if (!bHasCameraMoved)
 	{
