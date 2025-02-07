@@ -208,9 +208,13 @@ void App::init()
 		{
 			ImGui::Begin("Dual Contouring Settings!");                          // Create a window called "Hello, world!" and append into it.
 
-			//ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 			ImGui::Checkbox("Enable Cursor", &settings.bIsCursorEnabled);      // Edit bools storing our window open/close state
-			ImGui::Checkbox("Enable Debug", &settings.bIsDebugEnabled);      
+			if (ImGui::CollapsingHeader("Debug"))
+			{
+				ImGui::Checkbox("Enable Debug", &settings.bIsDebugEnabled);      
+				ImGui::Checkbox("Enable SDF Mesh Rendering", &settings.bViewMesh);
+			}
+			//ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 
 			//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 			ImGui::End();
@@ -268,25 +272,6 @@ void App::init()
 
 						//Push position to grid
 						grid.emplace_back(relativePos);
-
-						//DEBUG: Spawn cube at grid position
-						if(settings.bIsDebugEnabled)
-						{
-							//std::cout << "Spawning cube at position: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z << "\n";
-							//Create MVP
-							glm::mat4 model = glm::mat4(1.0f);
-							model = glm::translate(model, relativePos);
-							//model = glm::scale(model, glm::vec3(0.75f, 0.75f, 0.75f));
-
-							glm::mat4 view = m_currentCamera->GetViewMatrix();
-
-							glm::mat4 projection = m_currentCamera->GetProjectionMatrix();
-
-							glm::mat4 mvp = projection * view * model;
-
-							litShader.setMat4("mvp", mvp);
-							glDrawArrays(GL_TRIANGLES, 0, 36);
-						}
 
 						//Go over each corner
 
@@ -402,11 +387,33 @@ void App::init()
 							modelVertices.push_back(vertexPos.y);
 							modelVertices.push_back(vertexPos.z);
 
+						//DEBUG: Spawn cube at grid position
+						if(settings.bIsDebugEnabled)
+						{
+							//std::cout << "Spawning cube at position: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z << "\n";
+							//Create MVP
+							glm::mat4 model = glm::mat4(1.0f);
+							model = glm::translate(model, vertexPos);
+							model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+
+							glm::mat4 view = m_currentCamera->GetViewMatrix();
+
+							glm::mat4 projection = m_currentCamera->GetProjectionMatrix();
+
+							glm::mat4 mvp = projection * view * model;
+							glm::vec3 debugCubeColor(0.027f, 0.843f, 1.0f);
+							litShader.setMat4("mvp", mvp);
+							litShader.setVec3("color", debugCubeColor);
+
+							glDrawArrays(GL_TRIANGLES, 0, 36);
+						}
+
 							
 						}
 					}
 				}
 			}
+
 
 
 			//Iterate through the cubes again, and make the edge connections
@@ -508,15 +515,19 @@ void App::init()
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			
 
-			//Draw the model	
-			glm::mat4 view = m_currentCamera->GetViewMatrix();
+			//Draw the model
+			if (settings.bViewMesh)
+			{
+				glm::mat4 view = m_currentCamera->GetViewMatrix();
 
-			glm::mat4 projection = m_currentCamera->GetProjectionMatrix();
+				glm::mat4 projection = m_currentCamera->GetProjectionMatrix();
 
-			glm::mat4 mvp = projection * view * gridModelMatrix;
+				glm::mat4 mvp = projection * view * gridModelMatrix;
 
-			litShader.setMat4("mvp", mvp);
-			glDrawElements(GL_TRIANGLES, static_cast<int>(modelVertices.size()), GL_UNSIGNED_INT, 0);
+				litShader.setMat4("mvp", mvp);
+				litShader.setVec3("color", glm::vec3(1.0));
+				glDrawElements(GL_TRIANGLES, static_cast<int>(modelIndices.size()), GL_UNSIGNED_INT, 0);
+			}
 
 			//Next unbind the VAO
 			glBindVertexArray(0);
