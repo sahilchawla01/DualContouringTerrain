@@ -43,6 +43,7 @@ private:
 	static int GetUniqueIndexForGrid(const int x, const int y, const int z, const int gridWidth, const int gridHeight);
 	static void MouseCallback(GLFWwindow* window, double xposIn, double yposIn);
 	static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+	static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 };
 
 // ~~ GLFW Functions ~~ 

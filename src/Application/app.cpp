@@ -56,6 +56,7 @@ void App::init()
 	glfwMakeContextCurrent(window);
 	glfwSetCursorPosCallback(window, App::MouseCallback);
 	glfwSetScrollCallback(window, App::ScrollCallback);
+	glfwSetKeyCallback(window, App::KeyCallback);
 	glfwSetInputMode(window, GLFW_CURSOR, settings.bIsCursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 
 	//Load GLAD before any OpenGL calls, (to find function pointers for OpenGL)
@@ -79,7 +80,8 @@ void App::init()
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	//Compile Shader
-	Shader litShader("../../../src/Shaders/Test/test.vert", "../../../src/Shaders/Test/test.frag");
+	Shader litShader("../../../src/Shaders/simple-lit.vert", "../../../src/Shaders/simple-lit.frag");
+	Shader unlitShader("../../../src/Shaders/Test/test.vert", "../../../src/Shaders/Test/test.frag");
 
 	
 	// set up vertex data (and buffer(s)) and configure vertex attributes
@@ -128,24 +130,11 @@ void App::init()
 	  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
-	//float vertices[] = {
-	// 0.5f,  0.5f, 0.0f,  // top right
-	// 0.5f, -0.5f, 0.0f,  // bottom right
-	//-0.5f, -0.5f, 0.0f,  // bottom left
-	//-0.5f,  0.5f, 0.0f   // top left 
-	//};
-	unsigned int indices[] = {  // note that we start from 0!
-		0, 1, 3,   // first triangle
-		1, 2, 3    // second triangle
-	};
-
 	//Generate vertex array and vertex buffer for triangle render
-	unsigned int VBO, VAO, EBO;
+	unsigned int VBO, VAO;
 	//Generate Vertex Array Object
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
-	//Generate Element Buffer Object
-	//glGenBuffers(1, &EBO);
 
 	//Bind VAO
 	glBindVertexArray(VAO);
@@ -155,9 +144,6 @@ void App::init()
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	//Copy data to the buffer
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	// 1. Copy index array in an element buffer for OpenGL to use.
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	// 2. then set the vertex attributes pointers
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -222,17 +208,7 @@ void App::init()
 		}
 
 		//~~ Handle Rendering ~~
-		litShader.use();
-
-		//--Set directional light values--
-		//litShader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-		//litShader.setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-		//litShader.setVec3("dirLight.diffuse", glm::vec3(0.4f, 0.4f, 0.4f));
-		//litShader.setVec3("dirLight.specular", glm::vec3(0.6f, 0.6f, 0.6f));
-
-		////Set material values
-		//litShader.setFloat("mat.shine", 32.0f);
-
+		
 
 		//Create a 3D grid
 		{
@@ -243,6 +219,7 @@ void App::init()
 
 			std::vector<glm::vec3> grid;
 			std::vector<float> modelVertices;
+			std::vector<glm::vec3> modelNormals;
 			std::vector<unsigned int> modelIndices; 
 			grid.reserve(gridWidth * gridHeight * gridDepth);
 
@@ -255,8 +232,6 @@ void App::init()
 			glm::translate(gridModelMatrix, gridPosition);
 
 			glm::vec3 gridCenter((gridWidth * voxelSize) / 2, (gridHeight * voxelSize )/ 2, (gridDepth * voxelSize)/ 2);
-
-			glBindVertexArray(VAO);
 
 			//Generate vertex positions
 			for(int x = 0; x < gridWidth * voxelSize; x += voxelSize)
@@ -303,7 +278,8 @@ void App::init()
 							std::vector<glm::vec3> intersectionPoints;
 							std::vector<glm::vec3> intersectionNormals;
 
-							//Array describes if an intersection occurs (first element), and if so, if intersection is + to -ve (second element) is true, else false. 
+							//Array describes if an intersection occurs (first element), and if so, if intersection is + to -ve (second element) is true, else false.
+
 							std::array<std::pair<bool, bool>, 3> adjacentEdgesCrossingOver{{
 									std::make_pair(false, false),
 									std::make_pair(false, false),
@@ -373,23 +349,59 @@ void App::init()
 								vertexPos += pos;
 							}
 
-							//Get centroid of intersection positions and normals
+							//Get centroid of intersection positions 
 							vertexPos = vertexPos / static_cast<float>(intersectionPoints.size());
 
+							//Calculate centroid of intersection nromals
+							glm::vec3 vertexNormal(0.f);
+							for (const glm::vec3& normal : intersectionNormals)
+							{
+								vertexNormal += normal;
+							}
+
+							vertexNormal = glm::normalize(vertexNormal);
 
 							//TODO: Perform QEF to find the vertex position, and then use normals, currently normals are unused
 
 							//Map voxel to vertex array index position
-							voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)] = modelVertices.size() / 3;
+							voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)] = modelVertices.size();
+
+							//std::cout << "New Vertex: " << modelVertices.size() / 3<<", ";
 
 							//Store vertex position relative to grid space
 							modelVertices.push_back(vertexPos.x);
 							modelVertices.push_back(vertexPos.y);
 							modelVertices.push_back(vertexPos.z);
 
-						//DEBUG: Spawn cube at grid position
-						if(settings.bIsDebugEnabled)
+							//std::cout << "Vertex added, model vertices size" << modelVertices.size();
+
+							//Store model normals 
+							modelNormals.push_back(vertexNormal);
+							
+						}
+					}
+				}
+			}
+
+
+			//DEBUG: Spawn cube at grid position
+			if (settings.bIsDebugEnabled)
+			{
+
+				unlitShader.use();
+
+				//Bind the VAO for debugging cube
+				glBindVertexArray(VAO);
+
+				for (int x = 0; x < gridWidth * voxelSize; x += voxelSize)
+				{
+					for (int y = 0; y < gridHeight * voxelSize; y += voxelSize)
+					{
+						for (int z = 0; z < gridDepth * voxelSize; z += voxelSize)
 						{
+							int modelVerticesIndex = voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)];
+							glm::vec3 vertexPos(modelVertices[modelVerticesIndex], modelVertices[modelVerticesIndex + 1], modelVertices[modelVerticesIndex + 2]);
+
 							//std::cout << "Spawning cube at position: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z << "\n";
 							//Create MVP
 							glm::mat4 model = glm::mat4(1.0f);
@@ -402,18 +414,18 @@ void App::init()
 
 							glm::mat4 mvp = projection * view * model;
 							glm::vec3 debugCubeColor(0.027f, 0.843f, 1.0f);
-							litShader.setMat4("mvp", mvp);
-							litShader.setVec3("color", debugCubeColor);
-
+							unlitShader.setMat4("mvp", mvp);
+							unlitShader.setVec3("color", debugCubeColor);
 							glDrawArrays(GL_TRIANGLES, 0, 36);
-						}
 
-							
 						}
 					}
 				}
-			}
 
+				//Unbind the VAO
+				glBindVertexArray(0);
+
+			}
 
 
 			//Iterate through the cubes again, and make the edge connections
@@ -488,11 +500,26 @@ void App::init()
 				}
 			}
 
+			litShader.use();
+
+			//--Set directional light values--
+			litShader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+			litShader.setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+			litShader.setVec3("dirLight.diffuse", glm::vec3(0.4f, 0.4f, 0.4f));
+			litShader.setVec3("dirLight.specular", glm::vec3(0.6f, 0.6f, 0.6f));
+
+			////Set material values
+			litShader.setFloat("mat.shine", 32.0f);
+			litShader.setVec3("mat.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
+			litShader.setVec3("mat.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+			litShader.setVec3("mat.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+
 			//Create VAO, VBO, EBO for the model
-			unsigned int sphere_VBO, sphere_VAO, sphere_EBO;
+			unsigned int sphere_Vertices_VBO, sphere_Normals_VBO, sphere_VAO, sphere_EBO;
 			//Generate Vertex Array Object
 			glGenVertexArrays(1, &sphere_VAO);
-			glGenBuffers(1, &sphere_VBO);
+			glGenBuffers(1, &sphere_Vertices_VBO);
+			glGenBuffers(1, &sphere_Normals_VBO);
 			//Generate Element Buffer Object
 			glGenBuffers(1, &sphere_EBO);
 
@@ -501,7 +528,7 @@ void App::init()
 
 			// 0. copy our vertices array in a buffer for OpenGL to use
 			//Binds a buffer object to the current buffer type, only 1 can be set at one time
-			glBindBuffer(GL_ARRAY_BUFFER, sphere_VBO);
+			glBindBuffer(GL_ARRAY_BUFFER, sphere_Vertices_VBO);
 			//Copy data to the buffer
 			glBufferData(GL_ARRAY_BUFFER, modelVertices.size() * sizeof(float), modelVertices.data(), GL_STATIC_DRAW);
 			// 1. Copy index array in an element buffer for OpenGL to use.
@@ -511,9 +538,15 @@ void App::init()
 			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 			glEnableVertexAttribArray(0);
 
-			//Now we can unbind the buffer
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			
+			//Copy normal array in a buffer
+			glBindBuffer(GL_ARRAY_BUFFER, sphere_Normals_VBO);
+			//Copy data to the buffer
+			glBufferData(GL_ARRAY_BUFFER, modelNormals.size() * sizeof(float) * 3, modelNormals.data(), GL_STATIC_DRAW);
+			// 2. then set the vertex attributes pointers
+			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+			glEnableVertexAttribArray(1);
+
+	
 
 			//Draw the model
 			if (settings.bViewMesh)
@@ -525,10 +558,12 @@ void App::init()
 				glm::mat4 mvp = projection * view * gridModelMatrix;
 
 				litShader.setMat4("mvp", mvp);
-				litShader.setVec3("color", glm::vec3(1.0));
+				litShader.setVec3("objectColor", glm::vec3(1.0));
 				glDrawElements(GL_TRIANGLES, static_cast<int>(modelIndices.size()), GL_UNSIGNED_INT, 0);
 			}
 
+			//Now we can unbind the buffer
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			//Next unbind the VAO
 			glBindVertexArray(0);
 		}
@@ -550,7 +585,7 @@ void App::init()
 	// ------------------------------------------------------------------------
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
+
 
 	//Clean up code
 	ImGui_ImplOpenGL3_Shutdown();
@@ -615,13 +650,13 @@ void App::ProcessInput(GLFWwindow* window)
 		std::cout << "\nError: Camera not present.";
 	}
 
-	//Handle cursor display
-	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
-	{
-		//Flip flag
-		settings.bIsCursorEnabled = !settings.bIsCursorEnabled;
-		glfwSetInputMode(window, GLFW_CURSOR, settings.bIsCursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
-	}
+	////Handle cursor display
+	//if (glfwGetKey(window, GLFW_KEY_C) == GLFW_REPEAT)
+	//{
+	//	//Flip flag
+	//	settings.bIsCursorEnabled = !settings.bIsCursorEnabled;
+	//	glfwSetInputMode(window, GLFW_CURSOR, settings.bIsCursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+	//}
 }
 
 /*
@@ -648,6 +683,19 @@ void App::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 	App* appPtr = static_cast<App*>(glfwGetWindowUserPointer(window));
 
 	appPtr->m_currentCamera->ProcessScrollInput(static_cast<float>(xoffset), static_cast<float>(yoffset));
+}
+
+void App::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	//Get app pointer
+	App* appPtr = static_cast<App*>(glfwGetWindowUserPointer(window));
+
+	if (key == GLFW_KEY_C && action == GLFW_PRESS)
+	{
+		//Flip flag
+		appPtr->settings.bIsCursorEnabled = !appPtr->settings.bIsCursorEnabled;
+		glfwSetInputMode(window, GLFW_CURSOR, appPtr->settings.bIsCursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+	}
 }
 
 App::~App()

@@ -13,23 +13,37 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
     try
     {
         // open files
-        vShaderFile.open(vertexPath);
-        fShaderFile.open(fragmentPath);
-        std::stringstream vShaderStream, fShaderStream;
+        vShaderFile.open(vertexPath);;
+        std::stringstream vShaderStream;
         // read file's buffer contents into streams
         vShaderStream << vShaderFile.rdbuf();
-        fShaderStream << fShaderFile.rdbuf();
         // close file handlers
         vShaderFile.close();
-        fShaderFile.close();
         // convert stream into string
         vertexCode = vShaderStream.str();
+    }
+    catch (std::ifstream::failure& e)
+    {
+        std::cout << "VERTEX_SHADER("<<vertexPath<<")::ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << '\n';
+    }
+
+    try
+    {
+        // open files
+        fShaderFile.open(fragmentPath);
+        std::stringstream fShaderStream;
+        // read file's buffer contents into streams
+        fShaderStream << fShaderFile.rdbuf();
+        // close file handlers
+        fShaderFile.close();
+        // convert stream into string
         fragmentCode = fShaderStream.str();
     }
     catch (std::ifstream::failure& e)
     {
-        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << std::endl;
+        std::cout << "FRAGMENT_SHADER(" << fragmentPath << ")::ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << '\n';
     }
+
     const char* vShaderCode = vertexCode.c_str();
     const char* fShaderCode = fragmentCode.c_str();
     // 2. compile shaders
