@@ -8,6 +8,7 @@ uniform mat4 modelViewMatrix;
 
 out vec3 normal;
 out vec3 FragViewPosition;
+out vec3 vPos;
 
 void main()
 {
@@ -19,6 +20,8 @@ void main()
 	
 	//Send over model position (world pos)
 	FragViewPosition = vec3(modelViewMatrix * vec4(aPos, 1.0));
+
+	vPos = aPos;
 
 }
 

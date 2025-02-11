@@ -5,9 +5,7 @@
 #include "app.h"
 
 #include <array>
-#include <vector>
 #include <iostream>
-#include <unordered_map>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,6 +17,8 @@
 
 
 //IMGUI INCLUDES
+#include <algorithm>
+
 #include "Helpers/imgui/imgui.h"
 #include "Helpers/imgui/imgui_impl_glfw.h"
 #include "Helpers/imgui/imgui_impl_opengl3.h"
@@ -197,7 +197,8 @@ void App::init()
 			ImGui::Checkbox("Enable Cursor", &settings.bIsCursorEnabled);      // Edit bools storing our window open/close state
 			if (ImGui::CollapsingHeader("Debug"))
 			{
-				ImGui::Checkbox("Enable Debug", &settings.bIsDebugEnabled);      
+				ImGui::Checkbox("Enable Debug", &settings.bIsDebugEnabled);
+				ImGui::Checkbox("Enable Voxel Debug", &settings.bIsVoxelDebugEnabled);
 				ImGui::Checkbox("Enable SDF Mesh Rendering", &settings.bViewMesh);
 			}
 			//ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
@@ -219,7 +220,7 @@ void App::init()
 
 			std::vector<glm::vec3> grid;
 			std::vector<float> modelVertices;
-			std::vector<glm::vec3> modelNormals;
+			std::vector<float> modelNormals;
 			std::vector<unsigned int> modelIndices; 
 			grid.reserve(gridWidth * gridHeight * gridDepth);
 
@@ -260,7 +261,7 @@ void App::init()
 								glm::vec3 currentCornerPos = (DualContouring::voxelCornerOffsets[i] * static_cast<float>(voxelSize)) + relativePos;
 
 								//Calculate distance
-								float distanceValue = SDF::GetSphereSDFValue(currentCornerPos, gridPosition, 4.f);
+								float distanceValue = SDF::GetSphereSDFValue(currentCornerPos, gridPosition, 2.f);
 								cornerSDFValues[i] = distanceValue;
 
 								//TODO: convert position from grid relative to SDF center relative
@@ -337,7 +338,7 @@ void App::init()
 								//TODO: SAnity check whether point is within voxel
 
 								//Calculate normal using Finite Sum Difference
-								intersectionNormals.push_back(DualContouring::CalculateSurfaceNormal(currIntersectionPoint, gridPosition, 4.f));
+								intersectionNormals.push_back(DualContouring::CalculateSurfaceNormal(currIntersectionPoint, gridPosition, 2.f));
 							}
 
 							//Map voxel to adjacent edges vector
@@ -364,7 +365,7 @@ void App::init()
 							//TODO: Perform QEF to find the vertex position, and then use normals, currently normals are unused
 
 							//Map voxel to vertex array index position
-							voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)] = modelVertices.size();
+							voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)] = static_cast<int>(modelVertices.size());
 
 							//std::cout << "New Vertex: " << modelVertices.size() / 3<<", ";
 
@@ -376,7 +377,9 @@ void App::init()
 							//std::cout << "Vertex added, model vertices size" << modelVertices.size();
 
 							//Store model normals 
-							modelNormals.push_back(vertexNormal);
+							modelNormals.push_back(vertexNormal.x);
+							modelNormals.push_back(vertexNormal.y);
+							modelNormals.push_back(vertexNormal.z);
 							
 						}
 					}
@@ -384,7 +387,7 @@ void App::init()
 			}
 
 
-			//DEBUG: Spawn cube at grid position
+			//DEBUG: Spawn cube at vertex positions
 			if (settings.bIsDebugEnabled)
 			{
 
@@ -393,16 +396,24 @@ void App::init()
 				//Bind the VAO for debugging cube
 				glBindVertexArray(VAO);
 
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Normal shading
+				//Draw vertex position
 				for (int x = 0; x < gridWidth * voxelSize; x += voxelSize)
 				{
 					for (int y = 0; y < gridHeight * voxelSize; y += voxelSize)
 					{
 						for (int z = 0; z < gridDepth * voxelSize; z += voxelSize)
 						{
+							//If a vertex isn't there in a voxel, skip. 
+							if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)) == voxelVertexIndexMap.end())
+							{
+								continue;
+							}
+
+							//Draw vertex position
 							int modelVerticesIndex = voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)];
 							glm::vec3 vertexPos(modelVertices[modelVerticesIndex], modelVertices[modelVerticesIndex + 1], modelVertices[modelVerticesIndex + 2]);
 
-							//std::cout << "Spawning cube at position: " << relativePos.x << ", " << relativePos.y << ", " << relativePos.z << "\n";
 							//Create MVP
 							glm::mat4 model = glm::mat4(1.0f);
 							model = glm::translate(model, vertexPos);
@@ -416,10 +427,45 @@ void App::init()
 							glm::vec3 debugCubeColor(0.027f, 0.843f, 1.0f);
 							unlitShader.setMat4("mvp", mvp);
 							unlitShader.setVec3("color", debugCubeColor);
+
 							glDrawArrays(GL_TRIANGLES, 0, 36);
 
 						}
 					}
+				}
+
+				//Draw voxels
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				if (settings.bIsVoxelDebugEnabled)
+				{
+					for (int x = 0; x < gridWidth * voxelSize; x += voxelSize)
+					{
+						for (int y = 0; y < gridHeight * voxelSize; y += voxelSize)
+						{
+							for (int z = 0; z < gridDepth * voxelSize; z += voxelSize)
+							{
+
+								
+									glm::vec3 relativePos(static_cast<float>(x) - gridCenter.x, static_cast<float>(y) - gridCenter.y, static_cast<float>(z) - gridCenter.z);
+
+									relativePos += gridPosition;
+
+									glm::mat4 model = glm::mat4(1.0f);
+									model = glm::translate(model, relativePos);
+									model = glm::scale(model, glm::vec3(0.9f, 0.9f, 0.9f));
+									glm::mat4 view = m_currentCamera->GetViewMatrix();
+									glm::mat4 projection = m_currentCamera->GetProjectionMatrix();
+									glm::mat4 mvp = projection * view * model;
+									glm::vec3 voxelCubeColor(1.f, 0.984f, 0.f);
+									unlitShader.setMat4("mvp", mvp);
+									unlitShader.setVec3("color", voxelCubeColor);
+
+									glDrawArrays(GL_TRIANGLES, 0, 36);
+
+								}
+
+							}
+						}
 				}
 
 				//Unbind the VAO
@@ -445,27 +491,40 @@ void App::init()
 						}*/
 
 						//Iterate over adjacent edges and make connections where possible
-						for(int k = 0; k < 3; ++k)
+						for(int axis = 0; axis < 3; ++axis)
 						{
-							//For an edge, check if all 4 neighboring voxels are valid
-							if(adjacentEdgesIntersection[k].first == true && ((x - 1) > 0 && (y - 1) > 0 && (z - 1) > 0))
+							//For an edge, check if an intersection exists and all 4 neighboring voxels are valid
+							if(adjacentEdgesIntersection[axis].first == true && ((x - 1) > 0 && (y - 1) > 0 && (z - 1) > 0))
 							{
+
 								std::vector<unsigned int> vertexIndices;
+								bool bExitFlag = false;
+
 								//Store vertex indices for neighboring voxels
 								for(int i = 0; i < 4; ++i)
 								{
-									int curX = x + static_cast<int>(DualContouring::adjacentVoxelsOffsets[k][i].x);
-									int curY = y + static_cast<int>(DualContouring::adjacentVoxelsOffsets[k][i].y);
-									int curZ = z + static_cast<int>(DualContouring::adjacentVoxelsOffsets[k][i].z);
+									int curX = x + static_cast<int>(DualContouring::adjacentVoxelsOffsets[axis][i].x);
+									int curY = y + static_cast<int>(DualContouring::adjacentVoxelsOffsets[axis][i].y);
+									int curZ = z + static_cast<int>(DualContouring::adjacentVoxelsOffsets[axis][i].z);
 
+									//SANITY CHECK: IF CURRENT VOXEL IS NOT FOUND IN VOXEL-VERTEX MAP
+									if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(curX, curY, curZ, gridWidth, gridHeight)) == voxelVertexIndexMap.end())
+									{
+										//std::cout << "ERROR: Couldn't find voxel-vertex index in map\n";
+										bExitFlag = true;
+										break;
+									}
 									//Use voxelVertexIndexMap to get the index of the vertex for a voxel when connecting edges
-									vertexIndices.push_back(voxelVertexIndexMap[GetUniqueIndexForGrid(curX, curY, curZ, gridWidth, gridHeight)]);
+									vertexIndices.push_back(voxelVertexIndexMap[GetUniqueIndexForGrid(curX, curY, curZ, gridWidth, gridHeight)] / 3);
 								}
+
+								if (bExitFlag)
+									break;
 
 								//Join all 4 vertices in those voxels
 
 								//If the transition is from + to -ve 
-								if(adjacentEdgesIntersection[k].second == true)
+								if(adjacentEdgesIntersection[axis].second == true)
 								{
 									//Triangle 1
 									modelIndices.push_back(vertexIndices[1]);
@@ -490,7 +549,7 @@ void App::init()
 									modelIndices.push_back(vertexIndices[1]);
 								}
 
-							}
+							} 
 						}
 
 
@@ -504,15 +563,17 @@ void App::init()
 
 			//--Set directional light values--
 			litShader.setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-			litShader.setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+			litShader.setVec3("dirLight.ambient", glm::vec3(1.0f, 1.0f, 1.0f));
 			litShader.setVec3("dirLight.diffuse", glm::vec3(0.4f, 0.4f, 0.4f));
 			litShader.setVec3("dirLight.specular", glm::vec3(0.6f, 0.6f, 0.6f));
 
 			////Set material values
-			litShader.setFloat("mat.shine", 32.0f);
-			litShader.setVec3("mat.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
-			litShader.setVec3("mat.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+			litShader.setFloat("mat.shine", 64.0f);
+			litShader.setVec3("mat.ambient", glm::vec3(1.0f, 1.0f, 1.0f));
+			litShader.setVec3("mat.diffuse", glm::vec3(1.0f, 1.0f, 1.0f));
 			litShader.setVec3("mat.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+
+			//unlitShader.use();
 
 			//Create VAO, VBO, EBO for the model
 			unsigned int sphere_Vertices_VBO, sphere_Normals_VBO, sphere_VAO, sphere_EBO;
@@ -541,25 +602,35 @@ void App::init()
 			//Copy normal array in a buffer
 			glBindBuffer(GL_ARRAY_BUFFER, sphere_Normals_VBO);
 			//Copy data to the buffer
-			glBufferData(GL_ARRAY_BUFFER, modelNormals.size() * sizeof(float) * 3, modelNormals.data(), GL_STATIC_DRAW);
+			glBufferData(GL_ARRAY_BUFFER, modelNormals.size() * sizeof(float), modelNormals.data(), GL_STATIC_DRAW);
 			// 2. then set the vertex attributes pointers
 			glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 			glEnableVertexAttribArray(1);
 
-	
+			
 
 			//Draw the model
 			if (settings.bViewMesh)
 			{
+				
+
 				glm::mat4 view = m_currentCamera->GetViewMatrix();
 
 				glm::mat4 projection = m_currentCamera->GetProjectionMatrix();
 
-				glm::mat4 mvp = projection * view * gridModelMatrix;
+				glm::mat4 modelViewMatrix = view * gridModelMatrix;
+				glm::mat4 mvp = projection * modelViewMatrix;
 
-				litShader.setMat4("mvp", mvp);
+				litShader.setMat4("modelViewMatrix", modelViewMatrix);
 				litShader.setVec3("objectColor", glm::vec3(1.0));
+				litShader.setMat4("mvp", mvp);
+				//unlitShader.setMat4("mvp", mvp);
+				//unlitShader.setVec3("color", glm::vec3(0.8f));
+
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Normal shading
+
 				glDrawElements(GL_TRIANGLES, static_cast<int>(modelIndices.size()), GL_UNSIGNED_INT, 0);
+
 			}
 
 			//Now we can unbind the buffer
@@ -657,6 +728,78 @@ void App::ProcessInput(GLFWwindow* window)
 	//	settings.bIsCursorEnabled = !settings.bIsCursorEnabled;
 	//	glfwSetInputMode(window, GLFW_CURSOR, settings.bIsCursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 	//}
+}
+
+std::vector<unsigned int> App::getOrderedVertexIndices(int x, int y, int z, int axis, int gridWidth, int gridHeight,
+	const std::unordered_map<int, int>& voxelVertexIndexMap, const std::vector<float>& modelVertices)
+{
+//	std::vector<unsigned int> rawIndices;
+//	std::vector<glm::vec3> positions;
+//
+//	// Gather the four raw vertex indices using the adjacent offsets for this axis.
+//	// DualContouring::adjacentVoxelsOffsets[axis] is a vector of 4 glm::vec3 offsets.
+//	for (int i = 0; i < 4; ++i) {
+//		glm::vec3 offset = DualContouring::adjacentVoxelsOffsets[axis][i];
+//		int curX = x + static_cast<int>(offset.x);
+//		int curY = y + static_cast<int>(offset.y);
+//		int curZ = z + static_cast<int>(offset.z);
+//		int uniqueIdx = GetUniqueIndexForGrid(curX, curY, curZ, gridWidth, gridHeight);
+//		unsigned int vIdx = voxelVertexIndexMap[uniqueIdx];
+//		rawIndices.push_back(vIdx);
+//		// Retrieve the vertex position (assuming 3 floats per vertex)
+//		glm::vec3 pos(
+//			modelVert ices[vIdx],
+//			modelVertices[vIdx + 1],
+//			modelVertices[vIdx + 2]
+//		);
+//		positions.push_back(pos);
+//	}
+//
+//	// Project the 3D positions onto the appropriate 2D plane.
+//	// For axis 0: use the YZ plane (ignore x)
+//	// For axis 1: use the XZ plane (ignore y)
+//	// For axis 2: use the XY plane (ignore z)
+//	std::vector<glm::vec2> projected;
+//	for (const auto& pos : positions) {
+//		glm::vec2 proj;
+//		if (axis == 0)
+//			proj = glm::vec2(pos.y, pos.z);
+//		else if (axis == 1)
+//			proj = glm::vec2(pos.x, pos.z);
+//		else // axis == 2
+//			proj = glm::vec2(pos.x, pos.y);
+//		projected.push_back(proj);
+//	}
+//
+//	// Compute the centroid of the projected points.
+//	glm::vec2 centroid(0.0f, 0.0f);
+//	for (const auto& proj : projected) {
+//		centroid += proj;
+//	}
+//	centroid /= static_cast<float>(projected.size());
+//
+//	// For each projected point, compute the angle relative to the centroid.
+//	// We'll store the angle together with the corresponding raw index.
+//	std::vector<std::pair<float, unsigned int>> angleIndexPairs;
+//	for (size_t i = 0; i < projected.size(); ++i) {
+//		glm::vec2 dir = projected[i] - centroid;
+//		float angle = std::atan2(dir.y, dir.x);
+//		angleIndexPairs.push_back({ angle, rawIndices[i] });
+//	}
+//
+//	// Sort the pairs by angle in ascending order.
+//	std::sort(angleIndexPairs.begin(), angleIndexPairs.end(),
+//		[](const std::pair<float, unsigned int>& a, const std::pair<float, unsigned int>& b) {
+//			return a.first < b.first;
+//		});
+//
+//	// Extract the sorted vertex indices.
+	std::vector<unsigned int> orderedIndices;
+//	for (const auto& p : angleIndexPairs) {
+//		orderedIndices.push_back(p.second);
+//	}
+//
+	return orderedIndices;
 }
 
 /*

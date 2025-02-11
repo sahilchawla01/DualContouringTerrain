@@ -9,6 +9,7 @@ public:
 
 	bool bIsCursorEnabled = false;
 	bool bIsDebugEnabled = false;
+	bool bIsVoxelDebugEnabled = false;
 	//TODO: Eventually move to actor class
 	bool bViewMesh = true;
 };

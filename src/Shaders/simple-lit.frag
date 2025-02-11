@@ -19,9 +19,10 @@ struct Light {
 
 uniform Material mat;
 uniform Light dirLight;
-
 uniform vec3 objectColor;
 
+
+in vec3 vPos; 
 in vec3 normal;
 in vec3 FragViewPosition;
 
@@ -32,7 +33,7 @@ void main()
 
 	//-- Calculate AMBIENT component of Phong --
 
-	float ambientStrength = 0.1f;
+	float ambientStrength = 0.4f;
 	vec3 ambient = dirLight.ambient * ( ambientStrength * mat.ambient);
 
 
@@ -60,6 +61,9 @@ void main()
 	
 	//-- Calculate Phong RESULTANT -- 
 	vec3 phongResult = (ambient + diffuse + specular) * objectColor;
+
+	//-- Add a little color from Position as well -- 
+	phongResult = phongResult + 0.05 * vPos;
 
 	FragColor = vec4(phongResult, 1.0);
 }
