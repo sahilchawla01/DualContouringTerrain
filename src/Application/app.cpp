@@ -168,6 +168,8 @@ void App::init()
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
 	ImGui_ImplOpenGL3_Init();
+
+	bool bDebugEdges = true;
 	
 	//Render frames
 	while(!glfwWindowShouldClose(window))
@@ -213,9 +215,9 @@ void App::init()
 
 		//Create a 3D grid
 		{
-			const int gridWidth = 10;
-			const int gridHeight = 10;
-			const int gridDepth = 10;
+			const int gridWidth = 15;
+			const int gridHeight = 15;
+			const int gridDepth = 15;
 ; 
 
 			std::vector<glm::vec3> grid;
@@ -225,13 +227,15 @@ void App::init()
 			grid.reserve(gridWidth * gridHeight * gridDepth);
 
 			std::unordered_map<int, std::array<std::pair<bool, bool>, 3>> voxelEdgeIsoSurfaceMap;
+			std::unordered_map<int, std::array<std::pair<float, float>, 3>> voxelEdgeSDFMap;
+
 			std::unordered_map<int, int> voxelVertexIndexMap; 
 
 			glm::vec3 gridPosition(0.f, 0.f, 0.f);
 
 			glm::mat4 gridModelMatrix(1.f);
 			glm::translate(gridModelMatrix, gridPosition);
-
+			 
 			glm::vec3 gridCenter((gridWidth * voxelSize) / 2, (gridHeight * voxelSize )/ 2, (gridDepth * voxelSize)/ 2);
 
 			//Generate vertex positions
@@ -261,7 +265,7 @@ void App::init()
 								glm::vec3 currentCornerPos = (DualContouring::voxelCornerOffsets[i] * static_cast<float>(voxelSize)) + relativePos;
 
 								//Calculate distance
-								float distanceValue = SDF::GetSphereSDFValue(currentCornerPos, gridPosition, 2.f);
+								float distanceValue = SDF::GetSphereSDFValue(currentCornerPos, gridPosition, 4.f);
 								cornerSDFValues[i] = distanceValue;
 
 								//TODO: convert position from grid relative to SDF center relative
@@ -270,6 +274,23 @@ void App::init()
 								{
 									cornersToConsider |= 1 << i;
 								}
+							}
+
+							if (x == 4 && y == 4 && z == 5)
+							{
+								std::cout << "";
+							}
+							if (x == 4 && y == 4 && z == 6)
+							{
+								std::cout << "";
+							}
+							if (x == 3 && y == 4 && z == 5)
+							{
+								std::cout << "";
+							}
+							if (x == 3 && y == 4 && z == 6)
+							{
+								std::cout << "";
 							}
 
 							//If the voxel is completely within the surface, or outside the volume, ignore it.
@@ -286,11 +307,21 @@ void App::init()
 									std::make_pair(false, false),
 									std::make_pair(false, false),
 							}};
+							std::array<std::pair<float, float>, 3> debugAdjacentEdgeSDFS
+							{
+								{
+									std::make_pair(-10000.f, -10000.f),
+									std::make_pair(-10000.f, -10000.f),
+									std::make_pair(-10000.f, -10000),
+								} };
+
+							if (bDebugEdges) std::cout << "\nVoxel Being Considered: " << x << "," << y << "," << z<<"\n";
 
 							for(int i = 0; i < 12; ++i)
 							{
 								const int cornerIndex1 = DualContouring::edgePairs[i].first;
 								const int cornerIndex2 = DualContouring::edgePairs[i].second;
+
 
 								const int m1 = (cornersToConsider >> cornerIndex1) & 1;
 								const int m2 = (cornersToConsider >> cornerIndex2) & 1;
@@ -301,6 +332,12 @@ void App::init()
 									continue;
 								}
 
+								if (bDebugEdges) std::cout << "Corner Indices:" << cornerIndex1 << "," << cornerIndex2<<std::endl;
+
+								//glm::vec3 currentCornerPos1 = (DualContouring::voxelCornerOffsets[cornerIndex1] * static_cast<float>(voxelSize)) + relativePos;
+								//const int cornerIndex1SDF = ;
+								//glm::vec3 currentCornerPos2 = (DualContouring::voxelCornerOffsets[cornerIndex2] * static_cast<float>(voxelSize)) + relativePos;
+								//const int cornerIndex2SDF = ;
 								//Crossing over has occured, check if edge is one of the 3 adjacent left most corner ones, and set the value.
 								if (i == 0)
 								{
@@ -308,6 +345,10 @@ void App::init()
 									adjacentEdgesCrossingOver[0].first = true;
 									//If intersection is from + to -ve, mark as true, else false
 									adjacentEdgesCrossingOver[0].second = (m1 < m2);
+
+									//Corner 1 index SDF Value
+									debugAdjacentEdgeSDFS[0].first = (cornerSDFValues[cornerIndex1]);
+									debugAdjacentEdgeSDFS[0].second = (cornerSDFValues[cornerIndex2]);
 								}
 								else if (i == 3)
 								{
@@ -315,13 +356,19 @@ void App::init()
 									adjacentEdgesCrossingOver[1].first = true;
 									//If intersection is from + to -ve, mark as true, else false
 									adjacentEdgesCrossingOver[1].second = (m1 < m2);
+
+									debugAdjacentEdgeSDFS[1].first = (cornerSDFValues[cornerIndex1]);
+									debugAdjacentEdgeSDFS[1].second = (cornerSDFValues[cornerIndex2]);
 								}
-								else if(i == 8)
+								else if (i == 8)
 								{
 									//Mark intersection occurred 
 									adjacentEdgesCrossingOver[2].first = true;
 									//If intersection is from + to -ve, mark as true, else false
 									adjacentEdgesCrossingOver[2].second = (m1 < m2);
+
+									debugAdjacentEdgeSDFS[2].first = (cornerSDFValues[cornerIndex1]);
+									debugAdjacentEdgeSDFS[2].second = (cornerSDFValues[cornerIndex2]);
 								}
 
 								//Find position along the edge where surface crosses signs
@@ -338,11 +385,14 @@ void App::init()
 								//TODO: SAnity check whether point is within voxel
 
 								//Calculate normal using Finite Sum Difference
-								intersectionNormals.push_back(DualContouring::CalculateSurfaceNormal(currIntersectionPoint, gridPosition, 2.f));
+								intersectionNormals.push_back(DualContouring::CalculateSurfaceNormal(currIntersectionPoint, gridPosition, 4.f));
 							}
+
+							if (bDebugEdges) std::cout << std::endl;
 
 							//Map voxel to adjacent edges vector
 							voxelEdgeIsoSurfaceMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)] = adjacentEdgesCrossingOver;
+							voxelEdgeSDFMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)] = debugAdjacentEdgeSDFS;
 
 							glm::vec3 vertexPos(0.f);
 							for(const glm::vec3& pos : intersectionPoints)
@@ -353,7 +403,7 @@ void App::init()
 							//Get centroid of intersection positions 
 							vertexPos = vertexPos / static_cast<float>(intersectionPoints.size());
 
-							//Calculate centroid of intersection nromals
+							//Calculate centroid of intersection normals
 							glm::vec3 vertexNormal(0.f);
 							for (const glm::vec3& normal : intersectionNormals)
 							{
@@ -364,6 +414,11 @@ void App::init()
 
 							//TODO: Perform QEF to find the vertex position, and then use normals, currently normals are unused
 
+							//SANITY CHECK: CHECK IF CURRENT UNIQUE ID HAS ALREADY BEEN SET FOR VOXEL-VERTEX MAP
+							if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)) != voxelVertexIndexMap.end())
+							{
+								std::cout << "ERROR: THIS UNIQUE ID HAS ALREADY BEEN SET\n";
+							}
 							//Map voxel to vertex array index position
 							voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)] = static_cast<int>(modelVertices.size());
 
@@ -481,24 +536,35 @@ void App::init()
 				{
 					for (int z = 0; z < gridDepth * voxelSize; z += voxelSize)
 					{
+						const std::array<std::pair<bool, bool>, 3> adjacentEdgesIntersection = voxelEdgeIsoSurfaceMap[
+							GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)];
 
-						const std::array<std::pair<bool, bool>, 3> adjacentEdgesIntersection = voxelEdgeIsoSurfaceMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)];
+						const std::array<std::pair<float, float>, 3> edgesSDFPairs = voxelEdgeSDFMap[
+							GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)];
 
-					/*	if(adjacentEdgesIntersection.empty())
-						{
-							std::cout << "App || Error!, Couldn't find unique index for the current voxel when getting adjacentEdgeIntersection from map\n";
-							continue;
-						}*/
-
+						bool bVoxelDebug = true;
 						//Iterate over adjacent edges and make connections where possible
 						for(int axis = 0; axis < 3; ++axis)
 						{
 							//For an edge, check if an intersection exists and all 4 neighboring voxels are valid
 							if(adjacentEdgesIntersection[axis].first == true && ((x - 1) > 0 && (y - 1) > 0 && (z - 1) > 0))
 							{
+								if (bDebugEdges && bVoxelDebug) std::cout << "\nVoxel Being Considered: "<<x<<"," << y << ","<<z;
+								if (bDebugEdges)
+								{
+									if (axis == 0)
+										std::cout << "\nEdge 0-1 Being Considered";
+
+									if (axis == 1)
+										std::cout << "\nEdge 0-3 Being Considered";
+
+									if (axis == 2)
+										std::cout << "\nEdge 0-4 (Vertical) Being Considered";
+								}
+								bVoxelDebug = false;
 
 								std::vector<unsigned int> vertexIndices;
-								bool bExitFlag = false;
+								std::vector<std::vector<int>> debugIndices;
 
 								//Store vertex indices for neighboring voxels
 								for(int i = 0; i < 4; ++i)
@@ -507,46 +573,69 @@ void App::init()
 									int curY = y + static_cast<int>(DualContouring::adjacentVoxelsOffsets[axis][i].y);
 									int curZ = z + static_cast<int>(DualContouring::adjacentVoxelsOffsets[axis][i].z);
 
-									//SANITY CHECK: IF CURRENT VOXEL IS NOT FOUND IN VOXEL-VERTEX MAP
-									if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(curX, curY, curZ, gridWidth, gridHeight)) == voxelVertexIndexMap.end())
-									{
-										//std::cout << "ERROR: Couldn't find voxel-vertex index in map\n";
-										bExitFlag = true;
-										break;
-									}
-									//Use voxelVertexIndexMap to get the index of the vertex for a voxel when connecting edges
-									vertexIndices.push_back(voxelVertexIndexMap[GetUniqueIndexForGrid(curX, curY, curZ, gridWidth, gridHeight)] / 3);
+									auto it = voxelVertexIndexMap.find(GetUniqueIndexForGrid(curX, curY, curZ, gridWidth, gridHeight));
+
+									debugIndices.push_back({ curX, curY, curZ });
+
+									if (it == voxelVertexIndexMap.end())
+										continue;  // If voxel is missing, just skip it
+
+
+									// Store the found vertex index
+									vertexIndices.push_back(it->second / 3);
 								}
 
-								if (bExitFlag)
-									break;
+								if (vertexIndices.size() == 3)
+								{
+									//std::cout << "THERE WERE 3 VALID NEIGHBORS!";
+									if (bDebugEdges)
+									{
+										std::cout << "\nEdge Information: ";
+										for (std::vector<int> voxelId : debugIndices)
+										{
+											std::cout << "Voxel Id:" << voxelId[0] << "," << voxelId[1] << "," << voxelId[2] << "\n";
 
+											std::cout<<"Corners SDFs: "<<edgesSDFPairs[axis].first<<","<<edgesSDFPairs[axis].second<<"\n";
+										}
+									}
+
+
+								}
+
+								// If we have fewer than 4 valid neighbors, we cannot form a face
+								if (vertexIndices.size() <= 3)
+								{
+									continue;
+								}
 								//Join all 4 vertices in those voxels
-
-								//If the transition is from + to -ve 
-								if(adjacentEdgesIntersection[axis].second == true)
+								if (vertexIndices.size() == 4)
 								{
-									//Triangle 1
-									modelIndices.push_back(vertexIndices[1]);
-									modelIndices.push_back(vertexIndices[3]);
-									modelIndices.push_back(vertexIndices[2]);
+									//If the transition is from + to -ve 
+									if(adjacentEdgesIntersection[axis].second == true)
+									{
+										//Triangle 1
+										modelIndices.push_back(vertexIndices[1]);
+										modelIndices.push_back(vertexIndices[3]);
+										modelIndices.push_back(vertexIndices[2]);
 
-									//Triangle 2
-									modelIndices.push_back(vertexIndices[0]);
-									modelIndices.push_back(vertexIndices[1]);
-									modelIndices.push_back(vertexIndices[2]);
+										//Triangle 2
+										modelIndices.push_back(vertexIndices[0]);
+										modelIndices.push_back(vertexIndices[1]);
+										modelIndices.push_back(vertexIndices[2]);
 
-								} else //Reverse indices order otherwise (-ve to +ve transition)
-								{
-									//Triangle 1
-									modelIndices.push_back(vertexIndices[1]);
-									modelIndices.push_back(vertexIndices[2]);
-									modelIndices.push_back(vertexIndices[3]);
+									} else //Reverse indices order otherwise (-ve to +ve transition)
+									{
+										//Triangle 1
+										modelIndices.push_back(vertexIndices[1]);
+										modelIndices.push_back(vertexIndices[2]);
+										modelIndices.push_back(vertexIndices[3]);
 
-									//Triangle 2
-									modelIndices.push_back(vertexIndices[0]);
-									modelIndices.push_back(vertexIndices[2]);
-									modelIndices.push_back(vertexIndices[1]);
+										//Triangle 2
+										modelIndices.push_back(vertexIndices[0]);
+										modelIndices.push_back(vertexIndices[2]);
+										modelIndices.push_back(vertexIndices[1]);
+									}
+									
 								}
 
 							} 
@@ -627,7 +716,7 @@ void App::init()
 				//unlitShader.setMat4("mvp", mvp);
 				//unlitShader.setVec3("color", glm::vec3(0.8f));
 
-				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // Normal shading
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Normal shading
 
 				glDrawElements(GL_TRIANGLES, static_cast<int>(modelIndices.size()), GL_UNSIGNED_INT, 0);
 
@@ -649,6 +738,8 @@ void App::init()
 		glfwSwapBuffers(window);
 		//Check if any events have been triggered (keyboard inputs, mouse movements, etc)
 		glfwPollEvents();
+
+		bDebugEdges = false;
 
 	}
 

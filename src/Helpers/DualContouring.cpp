@@ -51,13 +51,6 @@ const std::vector<std::vector<glm::vec3>> DualContouring::adjacentVoxelsOffsets 
 			glm::vec3(0.f, -1.f, -1.f),
 
 	},
-	//Front most left vertical edge adjacent voxels
-{
-		glm::vec3(-1.f, 0.f, -1.f),
-		glm::vec3(-1.f, 0.f, 0.f),
-		glm::vec3(0.f, 0.f, -1.f),
-		glm::vec3(0.f, 0.f, 0.f),
-	  },
 	  //Left-Bottom most edge adjacent voxels
   {
 
@@ -65,7 +58,14 @@ const std::vector<std::vector<glm::vec3>> DualContouring::adjacentVoxelsOffsets 
 		  glm::vec3(-1.f, -1.f, 0.f),
 		  glm::vec3(0.f, 0.f, 0.f),
 		  glm::vec3(0.f, -1.f, 0.f),
-		}
+  },
+	//Front most left vertical edge adjacent voxels
+ {
+		glm::vec3(-1.f, 0.f, -1.f),
+		glm::vec3(-1.f, 0.f, 0.f),
+		glm::vec3(0.f, 0.f, -1.f),
+		glm::vec3(0.f, 0.f, 0.f),
+	}
 };
 
 
