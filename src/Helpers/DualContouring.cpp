@@ -237,13 +237,13 @@ void DualContouring::DebugDrawVertices(std::weak_ptr<ACamera> curCamera, std::we
 	}
 }
 
-void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& normals,
+void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<float>& normals,
                                   std::vector<unsigned int>& indices)
 {
 
 	std::vector<glm::vec3> grid;
-	std::vector<glm::vec3> modelVertices;
-	std::vector<glm::vec3> modelNormals;
+	std::vector<float> modelVertices;
+	std::vector<float> modelNormals;
 	std::vector<unsigned int> modelIndices;
 	grid.reserve(this->m_gridWidth * this->m_gridHeight * this->m_gridDepth);
 
@@ -400,12 +400,16 @@ void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<
 					//std::cout << "New Vertex: " << modelVertices.size() / 3<<", ";
 
 					//Store vertex position relative to grid space
-					modelVertices.push_back(glm::vec3(vertexPos.x, vertexPos.y, vertexPos.z));
+					modelVertices.push_back(vertexPos.x);
+					modelVertices.push_back(vertexPos.y);
+					modelVertices.push_back(vertexPos.z);
 
 					//std::cout << "Vertex added, model vertices size" << modelVertices.size();
 
-					//Store model normals 
-					modelNormals.push_back(glm::vec3(vertexNormal.x, vertexNormal.y, vertexNormal.z));
+					//Store model normals
+					modelNormals.push_back(vertexNormal.x);
+					modelNormals.push_back(vertexNormal.y);
+					modelNormals.push_back(vertexNormal.z);
 
 
 				}

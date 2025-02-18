@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 #include <Helpers/Shader.h>
 
-AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const std::weak_ptr<ACamera> currentCamera, const glm::vec3& model_position, const glm::vec3& model_scale)
+AActor::AActor(const std::string& name, const std::vector<float>& model_vertices, const std::vector<float>& model_normals, const std::weak_ptr<ACamera> currentCamera, const glm::vec3& model_position, const glm::vec3& model_scale)
 {
 	this->actorName = name;
 	this->vertices = model_vertices;
@@ -18,7 +18,7 @@ AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vert
 	
 }
 
-AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const std::vector<unsigned int>& model_indices, const std::weak_ptr<ACamera> currentCamera , const glm::vec3& model_position, const glm::vec3& model_scale)
+AActor::AActor(const std::string& name, const std::vector<float>& model_vertices, const std::vector<float>& model_normals, const std::vector<unsigned int>& model_indices, const std::weak_ptr<ACamera> currentCamera , const glm::vec3& model_position, const glm::vec3& model_scale)
 {
 	this->actorName = name;
 	this->vertices = model_vertices;
@@ -93,7 +93,7 @@ void AActor::SetupBuffers()
 	//Binds a buffer object to the current buffer type, only 1 can be set at one time
 	glBindBuffer(GL_ARRAY_BUFFER, vertices_VBO);
 	//Copy data to the buffer
-	glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(glm::vec3), this->vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(float), this->vertices.data(), GL_STATIC_DRAW);
 	// 1. Copy index array in an element buffer for OpenGL to use.
 	if (bShouldSetupEBO)
 	{
@@ -110,7 +110,7 @@ void AActor::SetupBuffers()
 		//Copy normal array in a buffer
 		glBindBuffer(GL_ARRAY_BUFFER, normal_VBO);
 		//Copy data to the buffer
-		glBufferData(GL_ARRAY_BUFFER, this->normals.size() * sizeof(glm::vec3), this->normals.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, this->normals.size() * sizeof(float), this->normals.data(), GL_STATIC_DRAW);
 		// 2. then set the vertex attributes pointers
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(1);

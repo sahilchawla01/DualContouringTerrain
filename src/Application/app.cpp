@@ -165,7 +165,7 @@ void App::init()
 
 
 	// Setup Grid
-	std::vector<glm::vec3> terrainVertices, terrainNormals;
+	std::vector<float> terrainVertices, terrainNormals;
 	std::vector<unsigned int> terrainIndices;
 
 	DualContouring dualContouring(15, 15, 15, 1);
