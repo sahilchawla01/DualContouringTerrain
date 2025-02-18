@@ -45,6 +45,11 @@ glm::mat4 AActor::GetModelMatrix() const
 	return m_modelTransformMatrix;
 }
 
+std::vector<float> AActor::GetVertices() const
+{
+	return vertices;
+}
+
 glm::mat4 AActor::GetMVPMatrix() const
 {
 	//If camera doesn't exist, HUUUUGE error

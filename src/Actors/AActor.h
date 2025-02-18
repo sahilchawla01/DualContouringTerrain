@@ -18,23 +18,25 @@ public:
 	AActor(const std::string& name, const std::vector<float>& model_vertices, const std::vector<float>& model_normals, const std::weak_ptr<ACamera> currentCamera, const glm::vec3& model_position = glm::vec3(0.0f), const glm::vec3& model_scale = glm::vec3(1.f));
 	AActor(const std::string& name, const std::vector<float>& model_vertices, const std::vector<float>& model_normals, const std::vector<unsigned int>& model_indices, const std::weak_ptr<ACamera> currentCamera, const glm::vec3& model_position = glm::vec3(0.0f), const glm::vec3& model_scale = glm::vec3(1.f));
 
-	//Buffer Object ids
-	unsigned int VAO;
-	unsigned int vertices_VBO;
-	unsigned int normal_VBO;
-	unsigned int EBO;
-
 public:
 
 	//IMP!! Call after object is created | Initializes buffers, shaders, etc 
 	void Init();
 	glm::mat4 GetModelMatrix() const;
+	std::vector<float> GetVertices() const;
 	virtual void Render();
 
 private:
 	std::string actorName; 
 
 protected:
+
+	//Buffer Object ids
+	unsigned int VAO;
+	unsigned int vertices_VBO;
+	unsigned int normal_VBO;
+	unsigned int EBO;
+
 	// MESH DETAILS
 	std::vector<float> vertices;
 	std::vector<float> normals;

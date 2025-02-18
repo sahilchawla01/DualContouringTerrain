@@ -126,13 +126,13 @@ const glm::vec3 DualContouring::CalculateSurfaceNormal(const glm::vec3& intersec
 	return glm::normalize(glm::vec3(dx, dy, dz));
 }
 
-void DualContouring::DebugDrawVertices(std::weak_ptr<ACamera> curCamera, std::weak_ptr<Settings> settings)
+void DualContouring::DebugDrawVertices(const std::vector<float>& vertices, std::weak_ptr<ACamera> curCamera, std::weak_ptr<Settings> settings)
 {
 	//DEBUG: Spawn cube at vertex positions
 	if (settings.lock()->bIsDebugEnabled)
 	{
 
-		float vertices[] = {
+		float cubeVertices[] = {
 	  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 	   0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
 	   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
@@ -186,11 +186,11 @@ void DualContouring::DebugDrawVertices(std::weak_ptr<ACamera> curCamera, std::we
 		//Bind VAO
 		glBindVertexArray(VAO);
 
-		// 0. copy our vertices array in a buffer for OpenGL to use
+		// 0. copy our cubeVertices array in a buffer for OpenGL to use
 		//Binds a buffer object to the current buffer type, only 1 can be set at one time
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		//Copy data to the buffer
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
 		// 2. then set the vertex attributes pointers
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);

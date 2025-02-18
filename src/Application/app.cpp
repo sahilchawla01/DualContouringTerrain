@@ -147,8 +147,11 @@ void App::init()
 
 		//~~ Handle Rendering ~~
 
+		//Render the SDF sphere
 		sphereActor.Render();
-		dualContouring.DebugDrawVertices(m_currentCamera, std::make_shared<Settings>(settings));
+		//Render dual contouring vertices
+		dualContouring.DebugDrawVertices(sphereActor.GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));
+
 		//Render the UI
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

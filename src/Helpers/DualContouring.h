@@ -23,14 +23,13 @@ public:
 	static const glm::vec3 CalculateSurfaceNormal(const glm::vec3& intersectionPos, const glm::vec3& spherePosition, const float& sphereRadius);
 
 	void GenerateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices);
-	void DebugDrawVertices(std::weak_ptr<ACamera> curCamera, std::weak_ptr<Settings> settings);
+	void DebugDrawVertices(const std::vector<float>& vertices,  std::weak_ptr<ACamera> curCamera, std::weak_ptr<Settings> settings);
 
 private:
 	int m_gridWidth = 15;
 	int m_gridHeight = 15;
 	int m_gridDepth = 15;
 	int m_voxelSize = 1;
-
 
 	std::unordered_map<int, std::array<std::pair<bool, bool>, 3>> voxelEdgeIsoSurfaceMap;
 	std::unordered_map<int, std::array<std::pair<float, float>, 3>> voxelEdgeSDFMap;
