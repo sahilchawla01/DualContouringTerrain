@@ -15,7 +15,6 @@ class ACamera;
 class AActor
 {
 public:
-	AActor();
 	AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const glm::vec3& model_position = glm::vec3(0.0f), const glm::vec3& model_scale = glm::vec3(1.f), const std::weak_ptr<ACamera> currentCamera);
 	AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const std::vector<unsigned int>& model_indices, const glm::vec3& model_position = glm::vec3(0.0f), const glm::vec3& model_scale = glm::vec3(1.f), const std::weak_ptr<ACamera> currentCamera);
 

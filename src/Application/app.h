@@ -42,7 +42,6 @@ private:
 	void PollSettings(GLFWwindow* window) const;
 	void CreateInitActors();
 	void ProcessInput(GLFWwindow* window);
-	std::vector<unsigned int> getOrderedVertexIndices(int x, int y, int z,int axis, int gridWidth, int gridHeight, const std::unordered_map<int, int>& voxelVertexIndexMap, const std::vector<float>& modelVertices);
 	static int GetUniqueIndexForGrid(const int x, const int y, const int z, const int gridWidth, const int gridHeight);
 	static void MouseCallback(GLFWwindow* window, double xposIn, double yposIn);
 	static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);

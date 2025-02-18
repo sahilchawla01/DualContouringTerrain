@@ -19,6 +19,7 @@
 
 //IMGUI INCLUDES
 
+#include "Actors/ASDFSphere.h"
 #include "Helpers/imgui/imgui.h"
 #include "Helpers/imgui/imgui_impl_glfw.h"
 #include "Helpers/imgui/imgui_impl_opengl3.h"
@@ -155,8 +156,6 @@ void App::init()
 
 	CreateInitActors();
 
-	const int voxelSize = 1;
-
 
 	//Setup IMGUI
 	IMGUI_CHECKVERSION();
@@ -169,8 +168,17 @@ void App::init()
 	ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
 	ImGui_ImplOpenGL3_Init();
 
-	bool bDebugEdges = true;
-	
+
+	// Setup Grid
+	std::vector<glm::vec3> terrainVertices, terrainNormals;
+	std::vector<unsigned int> terrainIndices;
+
+	DualContouring dualContouring(15, 15, 15);
+	dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices);
+
+	//Create Sphere Actor
+	ASDFSphere* sphereActor = new ASDFSphere()
+
 	//Render frames
 	while(!glfwWindowShouldClose(window))
 	{
@@ -214,11 +222,10 @@ void App::init()
 		
 
 		//Create a 3D grid
-		{
+		/*{
 			const int gridWidth = 15;
 			const int gridHeight = 15;
 			const int gridDepth = 15;
-; 
 
 			std::vector<glm::vec3> grid;
 			std::vector<float> modelVertices;
@@ -703,7 +710,7 @@ void App::init()
 
 				glDrawElements(GL_TRIANGLES, static_cast<int>(modelIndices.size()), GL_UNSIGNED_INT, 0);
 
-			}
+			} */
 
 			//Now we can unbind the buffer
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -721,8 +728,6 @@ void App::init()
 		glfwSwapBuffers(window);
 		//Check if any events have been triggered (keyboard inputs, mouse movements, etc)
 		glfwPollEvents();
-
-		bDebugEdges = false;
 
 	}
 
@@ -804,77 +809,6 @@ void App::ProcessInput(GLFWwindow* window)
 	//}
 }
 
-std::vector<unsigned int> App::getOrderedVertexIndices(int x, int y, int z, int axis, int gridWidth, int gridHeight,
-	const std::unordered_map<int, int>& voxelVertexIndexMap, const std::vector<float>& modelVertices)
-{
-//	std::vector<unsigned int> rawIndices;
-//	std::vector<glm::vec3> positions;
-//
-//	// Gather the four raw vertex indices using the adjacent offsets for this axis.
-//	// DualContouring::adjacentVoxelsOffsets[axis] is a vector of 4 glm::vec3 offsets.
-//	for (int i = 0; i < 4; ++i) {
-//		glm::vec3 offset = DualContouring::adjacentVoxelsOffsets[axis][i];
-//		int curX = x + static_cast<int>(offset.x);
-//		int curY = y + static_cast<int>(offset.y);
-//		int curZ = z + static_cast<int>(offset.z);
-//		int uniqueIdx = GetUniqueIndexForGrid(curX, curY, curZ, gridWidth, gridHeight);
-//		unsigned int vIdx = voxelVertexIndexMap[uniqueIdx];
-//		rawIndices.push_back(vIdx);
-//		// Retrieve the vertex position (assuming 3 floats per vertex)
-//		glm::vec3 pos(
-//			modelVert ices[vIdx],
-//			modelVertices[vIdx + 1],
-//			modelVertices[vIdx + 2]
-//		);
-//		positions.push_back(pos);
-//	}
-//
-//	// Project the 3D positions onto the appropriate 2D plane.
-//	// For axis 0: use the YZ plane (ignore x)
-//	// For axis 1: use the XZ plane (ignore y)
-//	// For axis 2: use the XY plane (ignore z)
-//	std::vector<glm::vec2> projected;
-//	for (const auto& pos : positions) {
-//		glm::vec2 proj;
-//		if (axis == 0)
-//			proj = glm::vec2(pos.y, pos.z);
-//		else if (axis == 1)
-//			proj = glm::vec2(pos.x, pos.z);
-//		else // axis == 2
-//			proj = glm::vec2(pos.x, pos.y);
-//		projected.push_back(proj);
-//	}
-//
-//	// Compute the centroid of the projected points.
-//	glm::vec2 centroid(0.0f, 0.0f);
-//	for (const auto& proj : projected) {
-//		centroid += proj;
-//	}
-//	centroid /= static_cast<float>(projected.size());
-//
-//	// For each projected point, compute the angle relative to the centroid.
-//	// We'll store the angle together with the corresponding raw index.
-//	std::vector<std::pair<float, unsigned int>> angleIndexPairs;
-//	for (size_t i = 0; i < projected.size(); ++i) {
-//		glm::vec2 dir = projected[i] - centroid;
-//		float angle = std::atan2(dir.y, dir.x);
-//		angleIndexPairs.push_back({ angle, rawIndices[i] });
-//	}
-//
-//	// Sort the pairs by angle in ascending order.
-//	std::sort(angleIndexPairs.begin(), angleIndexPairs.end(),
-//		[](const std::pair<float, unsigned int>& a, const std::pair<float, unsigned int>& b) {
-//			return a.first < b.first;
-//		});
-//
-//	// Extract the sorted vertex indices.
-	std::vector<unsigned int> orderedIndices;
-//	for (const auto& p : angleIndexPairs) {
-//		orderedIndices.push_back(p.second);
-//	}
-//
-	return orderedIndices;
-}
 
 /*
  * Resize the viewport of the OpenGL window to new width and height

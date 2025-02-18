@@ -3,10 +3,6 @@
 #include <glad/glad.h>
 #include <Helpers/Shader.h>
 
-AActor::AActor()
-{
-}
-
 AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const glm::vec3& model_position, const glm::vec3& model_scale, const std::weak_ptr<ACamera> currentCamera)
 {
 	this->actorName = name;

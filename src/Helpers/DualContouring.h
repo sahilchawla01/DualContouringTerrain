@@ -24,4 +24,7 @@ private:
 	unsigned int m_gridHeight = 15;
 	unsigned int m_gridDepth = 15;
 
+private:
+	static int GetUniqueIndexForGrid(const int x, const int y, const int z, const int gridWidth, const int gridHeight);
+
 };
