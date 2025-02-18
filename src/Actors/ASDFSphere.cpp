@@ -1,6 +1,10 @@
 #include "ASDFSphere.h"
 #include "Helpers/Shader.h"
 
+ASDFSphere::~ASDFSphere()
+{
+}
+
 void ASDFSphere::SetupShader()
 {
 	//Set current shader

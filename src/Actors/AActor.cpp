@@ -169,4 +169,12 @@ void AActor::UseShader()
 	currentShader->setVec3("color", glm::vec3(1.0, 1.0, 1.0));
 }
 
+AActor::~AActor()
+{
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &vertices_VBO);
+	glDeleteBuffers(1, &normal_VBO);
+
+}
+
 

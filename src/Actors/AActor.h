@@ -57,6 +57,6 @@ protected:
 	virtual void SetupShader();
 	virtual void UseShader();
 
-	virtual ~AActor() = default;
+	virtual ~AActor();
 };
 
