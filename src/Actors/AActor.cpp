@@ -82,14 +82,14 @@ glm::mat4 AActor::GetModelViewMatrix() const
 void AActor::SetupBuffers()
 {
 	bool bShouldSetupEBO = !(this->indices.empty());
+	bool bShouldBindNormals = !(this->normals.empty());
 
 	//Generate Vertex Array Object
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &vertices_VBO);
-	glGenBuffers(1, &normal_VBO);
+	if (bShouldBindNormals) glGenBuffers(1, &normal_VBO);
 	//Generate Element Buffer Object
-	if (bShouldSetupEBO)
-		glGenBuffers(1, &EBO);
+	if (bShouldSetupEBO) glGenBuffers(1, &EBO);
 
 	//Bind VAO
 	glBindVertexArray(VAO);
@@ -110,18 +110,22 @@ void AActor::SetupBuffers()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
-	//Copy normal array in a buffer
-	glBindBuffer(GL_ARRAY_BUFFER, normal_VBO);
-	//Copy data to the buffer
-	glBufferData(GL_ARRAY_BUFFER, this->normals.size() * sizeof(float), this->normals.data(), GL_STATIC_DRAW);
-	// 2. then set the vertex attributes pointers
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
+	if (bShouldBindNormals)
+	{
+		//Copy normal array in a buffer
+		glBindBuffer(GL_ARRAY_BUFFER, normal_VBO);
+		//Copy data to the buffer
+		glBufferData(GL_ARRAY_BUFFER, this->normals.size() * sizeof(float), this->normals.data(), GL_STATIC_DRAW);
+		// 2. then set the vertex attributes pointers
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+	}
 
 
 	//Release buffer data
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 	if (bShouldSetupEBO)
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
