@@ -3,16 +3,20 @@
 #include <array>
 #include <iostream>
 #include <unordered_map>
-
+#include <glad/glad.h>
+#include <Helpers/Settings.h>
+#include <Actors/ACamera.h>
+#include "Shader.h"
 #include "Math/SDF.h"
 
 
 DualContouring::DualContouring(const unsigned int& gridWidth, const unsigned int& gridHeight,
-	const unsigned int& gridDepth)
+	const unsigned int& gridDepth, const unsigned int& voxelSize)
 {
 	this->m_gridWidth = gridWidth;
 	this->m_gridHeight = gridHeight;
 	this->m_gridDepth = gridDepth;
+	this->m_voxelSize = voxelSize;
 }
 
 DualContouring::~DualContouring()
@@ -122,39 +126,140 @@ const glm::vec3 DualContouring::CalculateSurfaceNormal(const glm::vec3& intersec
 	return glm::normalize(glm::vec3(dx, dy, dz));
 }
 
-void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& normals,
-	std::vector<unsigned int>& indices)
+void DualContouring::DebugDrawVertices(std::weak_ptr<ACamera> curCamera, std::weak_ptr<Settings> settings)
 {
-	const int voxelSize = 1;
+	//DEBUG: Spawn cube at vertex positions
+	if (settings.lock()->bIsDebugEnabled)
+	{
 
-	const int gridWidth = 15;
-	const int gridHeight = 15;
-	const int gridDepth = 15;
+		float vertices[] = {
+	  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	   0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+	   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+	  -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+	  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	   0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	   0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	   0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	  -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+	  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+	  -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	  -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	  -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+	   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	   0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	   0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	   0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+	  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	   0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+	   0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	   0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	  -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	  -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+	  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+	   0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	   0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	  -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+	  -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+		};
+		Shader unlitShader("../../../src/Shaders/Test/test.vert", "../../../src/Shaders/Test/test.frag");
+
+		//Generate vertex array and vertex buffer for triangle render
+		unsigned int VBO, VAO;
+		//Generate Vertex Array Object
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+
+		//Bind VAO
+		glBindVertexArray(VAO);
+
+		// 0. copy our vertices array in a buffer for OpenGL to use
+		//Binds a buffer object to the current buffer type, only 1 can be set at one time
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		//Copy data to the buffer
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		// 2. then set the vertex attributes pointers
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+
+		unlitShader.use();
+
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Normal shading
+		//Draw vertex position
+		for (int x = 0; x < this->m_gridWidth * this->m_voxelSize; x += this->m_voxelSize)
+		{
+			for (int y = 0; y < this->m_gridHeight * this->m_voxelSize; y += this->m_voxelSize)
+			{
+				for (int z = 0; z < this->m_gridDepth * this->m_voxelSize; z += this->m_voxelSize)
+				{
+					//If a vertex isn't there in a voxel, skip. 
+					if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)) == voxelVertexIndexMap.end())
+					{
+						continue;
+					}
+
+					//Draw vertex position
+					int modelVerticesIndex = voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)];
+					glm::vec3 vertexPos(vertices[modelVerticesIndex], vertices[modelVerticesIndex + 1], vertices[modelVerticesIndex + 2]);
+
+					//Create MVP
+					glm::mat4 model = glm::mat4(1.0f);
+					model = glm::translate(model, vertexPos);
+					model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+
+					glm::mat4 view = curCamera.lock()->GetViewMatrix();
+
+					glm::mat4 projection = curCamera.lock()->GetProjectionMatrix();
+
+					glm::mat4 mvp = projection * view * model;
+					glm::vec3 debugCubeColor(0.027f, 0.843f, 1.0f);
+					unlitShader.setMat4("mvp", mvp);
+					unlitShader.setVec3("color", debugCubeColor);
+
+					glDrawArrays(GL_TRIANGLES, 0, 36);
+
+				}
+			}
+		}
+	}
+}
+
+void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& normals,
+                                  std::vector<unsigned int>& indices)
+{
 
 	std::vector<glm::vec3> grid;
 	std::vector<glm::vec3> modelVertices;
 	std::vector<glm::vec3> modelNormals;
 	std::vector<unsigned int> modelIndices;
-	grid.reserve(gridWidth * gridHeight * gridDepth);
-
-	std::unordered_map<int, std::array<std::pair<bool, bool>, 3>> voxelEdgeIsoSurfaceMap;
-	std::unordered_map<int, std::array<std::pair<float, float>, 3>> voxelEdgeSDFMap;
-
-	std::unordered_map<int, int> voxelVertexIndexMap;
+	grid.reserve(this->m_gridWidth * this->m_gridHeight * this->m_gridDepth);
 
 	glm::vec3 gridPosition(0.f, 0.f, 0.f);
 
 	glm::mat4 gridModelMatrix(1.f);
 	glm::translate(gridModelMatrix, gridPosition);
 
-	glm::vec3 gridCenter((gridWidth * voxelSize) / 2, (gridHeight * voxelSize) / 2, (gridDepth * voxelSize) / 2);
+	glm::vec3 gridCenter((this->m_gridWidth * this->m_voxelSize) / 2, (this->m_gridHeight * this->m_voxelSize) / 2, (this->m_gridDepth * this->m_voxelSize) / 2);
 
 	//Generate vertex positions
-	for (int x = 0; x < gridWidth * voxelSize; x += voxelSize)
+	for (int x = 0; x < this->m_gridWidth * this->m_voxelSize; x += this->m_voxelSize)
 	{
-		for (int y = 0; y < gridHeight * voxelSize; y += voxelSize)
+		for (int y = 0; y < this->m_gridHeight * this->m_voxelSize; y += this->m_voxelSize)
 		{
-			for (int z = 0; z < gridDepth * voxelSize; z += voxelSize)
+			for (int z = 0; z < this->m_gridDepth * this->m_voxelSize; z += this->m_voxelSize)
 			{
 				//Get relative position to grid position
 				glm::vec3 relativePos(static_cast<float>(x) - gridCenter.x, static_cast<float>(y) - gridCenter.y, static_cast<float>(z) - gridCenter.z);
@@ -173,7 +278,7 @@ void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<
 					for (int i = 0; i < 8; ++i)
 					{
 						//Get current position 
-						glm::vec3 currentCornerPos = (voxelCornerOffsets[i] * static_cast<float>(voxelSize)) + relativePos;
+						glm::vec3 currentCornerPos = (voxelCornerOffsets[i] * static_cast<float>(this->m_voxelSize)) + relativePos;
 
 						//Calculate distance
 						float distanceValue = SDF::GetSphereSDFValue(currentCornerPos, gridPosition, 4.f);
@@ -245,8 +350,8 @@ void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<
 						//Find position along the edge where surface crosses signs
 
 						//TODO: convert position from grid relative to SDF center relative
-						const glm::vec3 cornerPos1 = (voxelCornerOffsets[cornerIndex1] * static_cast<float>(voxelSize)) + relativePos;
-						const glm::vec3 cornerPos2 = (voxelCornerOffsets[cornerIndex2] * static_cast<float>(voxelSize)) + relativePos;
+						const glm::vec3 cornerPos1 = (voxelCornerOffsets[cornerIndex1] * static_cast<float>(this->m_voxelSize)) + relativePos;
+						const glm::vec3 cornerPos2 = (voxelCornerOffsets[cornerIndex2] * static_cast<float>(this->m_voxelSize)) + relativePos;
 
 						//Get current intersection point by using linear interpolation
 						float interpolateFactor = abs(cornerSDFValues[cornerIndex1]) / (abs(cornerSDFValues[cornerIndex1]) + abs(cornerSDFValues[cornerIndex2]));
@@ -261,7 +366,7 @@ void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<
 
 					
 					//Map voxel to adjacent edges vector
-					voxelEdgeIsoSurfaceMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)] = adjacentEdgesCrossingOver;
+					voxelEdgeIsoSurfaceMap[GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)] = adjacentEdgesCrossingOver;
 
 					glm::vec3 vertexPos(0.f);
 					for (const glm::vec3& pos : intersectionPoints)
@@ -284,13 +389,13 @@ void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<
 					//TODO: Perform QEF to find the vertex position, and then use normals, currently normals are unused
 
 					//SANITY CHECK: CHECK IF CURRENT UNIQUE ID HAS ALREADY BEEN SET FOR VOXEL-VERTEX MAP
-					if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)) != voxelVertexIndexMap.end())
+					if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)) != voxelVertexIndexMap.end())
 					{
 						std::cout << "ERROR: THIS UNIQUE ID HAS ALREADY BEEN SET\n";
 					}
 
 					//Map voxel to vertex array index position
-					voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)] = static_cast<int>(modelVertices.size());
+					voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)] = static_cast<int>(modelVertices.size());
 
 					//std::cout << "New Vertex: " << modelVertices.size() / 3<<", ";
 
@@ -309,52 +414,7 @@ void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<
 	}
 
 
-	//DEBUG: Spawn cube at vertex positions
-	//if (settings.bIsDebugEnabled)
-	//{
-
-	//	unlitShader.use();
-
-	//	//Bind the VAO for debugging cube
-	//	glBindVertexArray(VAO);
-
-	//	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Normal shading
-	//	//Draw vertex position
-	//	for (int x = 0; x < gridWidth * voxelSize; x += voxelSize)
-	//	{
-	//		for (int y = 0; y < gridHeight * voxelSize; y += voxelSize)
-	//		{
-	//			for (int z = 0; z < gridDepth * voxelSize; z += voxelSize)
-	//			{
-	//				//If a vertex isn't there in a voxel, skip. 
-	//				if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)) == voxelVertexIndexMap.end())
-	//				{
-	//					continue;
-	//				}
-
-	//				//Draw vertex position
-	//				int modelVerticesIndex = voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)];
-	//				glm::vec3 vertexPos(modelVertices[modelVerticesIndex], modelVertices[modelVerticesIndex + 1], modelVertices[modelVerticesIndex + 2]);
-
-	//				//Create MVP
-	//				glm::mat4 model = glm::mat4(1.0f);
-	//				model = glm::translate(model, vertexPos);
-	//				model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
-
-	//				glm::mat4 view = m_currentCamera->GetViewMatrix();
-
-	//				glm::mat4 projection = m_currentCamera->GetProjectionMatrix();
-
-	//				glm::mat4 mvp = projection * view * model;
-	//				glm::vec3 debugCubeColor(0.027f, 0.843f, 1.0f);
-	//				unlitShader.setMat4("mvp", mvp);
-	//				unlitShader.setVec3("color", debugCubeColor);
-
-	//				glDrawArrays(GL_TRIANGLES, 0, 36);
-
-	//			}
-	//		}
-	//	}
+	
 
 		//Draw voxels
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -397,14 +457,14 @@ void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<
 
 
 	//Iterate through the cubes again, and make the edge connections
-	for (int x = 0; x < gridWidth * voxelSize; x += voxelSize)
+	for (int x = 0; x < this->m_gridWidth * m_voxelSize; x += m_voxelSize)
 	{
-		for (int y = 0; y < gridHeight * voxelSize; y += voxelSize)
+		for (int y = 0; y < this->m_gridHeight * m_voxelSize; y += m_voxelSize)
 		{
-			for (int z = 0; z < gridDepth * voxelSize; z += voxelSize)
+			for (int z = 0; z < this->m_gridDepth * m_voxelSize; z += m_voxelSize)
 			{
 				const std::array<std::pair<bool, bool>, 3> adjacentEdgesIntersection = voxelEdgeIsoSurfaceMap[
-					GetUniqueIndexForGrid(x, y, z, gridWidth, gridHeight)];
+					GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)];
 
 				//Iterate over adjacent edges and make connections where possible
 				for (int axis = 0; axis < 3; ++axis)
@@ -423,7 +483,7 @@ void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<
 							int curY = y + static_cast<int>(DualContouring::adjacentVoxelsOffsets[axis][i].y);
 							int curZ = z + static_cast<int>(DualContouring::adjacentVoxelsOffsets[axis][i].z);
 
-							auto it = voxelVertexIndexMap.find(GetUniqueIndexForGrid(curX, curY, curZ, gridWidth, gridHeight));
+							auto it = voxelVertexIndexMap.find(GetUniqueIndexForGrid(curX, curY, curZ, this->m_gridWidth, this->m_gridHeight));
 
 							debugIndices.push_back({ curX, curY, curZ });
 

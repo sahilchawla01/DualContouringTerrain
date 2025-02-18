@@ -12,8 +12,8 @@ AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vert
 
 	//Setup transform matrix
 	m_modelTransformMatrix = glm::mat4(1.f);
-	glm::translate(m_modelTransformMatrix, model_position);
-	glm::scale(m_modelTransformMatrix, model_scale);
+	m_modelTransformMatrix = glm::translate(m_modelTransformMatrix, model_position);
+	m_modelTransformMatrix = glm::scale(m_modelTransformMatrix, model_scale);
 
 	
 }
@@ -28,8 +28,8 @@ AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vert
 
 	//Setup transform matrix
 	m_modelTransformMatrix = glm::mat4(1.f);
-	glm::translate(m_modelTransformMatrix, model_position);
-	glm::scale(m_modelTransformMatrix, model_scale);
+	m_modelTransformMatrix = glm::translate(m_modelTransformMatrix, model_position);
+	m_modelTransformMatrix = glm::scale(m_modelTransformMatrix, model_scale);
 	
 }
 
@@ -93,7 +93,7 @@ void AActor::SetupBuffers()
 	//Binds a buffer object to the current buffer type, only 1 can be set at one time
 	glBindBuffer(GL_ARRAY_BUFFER, vertices_VBO);
 	//Copy data to the buffer
-	glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(float), this->vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, this->vertices.size() * sizeof(glm::vec3), this->vertices.data(), GL_STATIC_DRAW);
 	// 1. Copy index array in an element buffer for OpenGL to use.
 	if (bShouldSetupEBO)
 	{
@@ -110,7 +110,7 @@ void AActor::SetupBuffers()
 		//Copy normal array in a buffer
 		glBindBuffer(GL_ARRAY_BUFFER, normal_VBO);
 		//Copy data to the buffer
-		glBufferData(GL_ARRAY_BUFFER, this->normals.size() * sizeof(float), this->normals.data(), GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, this->normals.size() * sizeof(glm::vec3), this->normals.data(), GL_STATIC_DRAW);
 		// 2. then set the vertex attributes pointers
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(1);
@@ -119,12 +119,10 @@ void AActor::SetupBuffers()
 
 	//Release buffer data
 
+	glBindVertexArray(0);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	if (bShouldSetupEBO)
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	glBindVertexArray(0);
 }
 
 void AActor::SetupShader()
@@ -132,7 +130,7 @@ void AActor::SetupShader()
 	//Default implementation
 
 	//Default shader is unlit
-	currentShader = std::make_unique<Shader>(Shader("../../../src/Shaders/Test/test.vert", "../../../src/Shaders/Test/test.frag"));
+	currentShader = std::make_unique<Shader>("../../../src/Shaders/Test/test.vert", "../../../src/Shaders/Test/test.frag");
 }
 
 void AActor::Render()
@@ -147,6 +145,8 @@ void AActor::Render()
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Normal shading
 
+	//std::cout << "\nVertices: " << vertices.size();
+	//std::cout << "\nNormals: " << normals.size();
 
 	if (bShouldDrawEBO)
 	{
@@ -155,7 +155,7 @@ void AActor::Render()
 		
 	} else
 	{
-		glDrawArrays(GL_TRIANGLES, 0, static_cast<int>(vertices.size()) / 3);
+		glDrawArrays(GL_TRIANGLES, 0, static_cast<int>(vertices.size()) * 3);
 	}
 
 }

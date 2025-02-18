@@ -4,7 +4,7 @@
 void ASDFSphere::SetupShader()
 {
 	//Set current shader
-	currentShader = std::make_unique<Shader>(Shader("../../../src/Shaders/simple-lit.vert", "../../../src/Shaders/simple-lit.frag"));
+	currentShader = std::make_unique<Shader>("../../../src/Shaders/simple-lit.vert", "../../../src/Shaders/simple-lit.frag");
 
 }
 
@@ -25,5 +25,6 @@ void ASDFSphere::UseShader()
 	currentShader->setVec3("mat.ambient", glm::vec3(1.0f, 1.0f, 1.0f));
 	currentShader->setVec3("mat.diffuse", glm::vec3(1.0f, 1.0f, 1.0f));
 	currentShader->setVec3("mat.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+
 
 }

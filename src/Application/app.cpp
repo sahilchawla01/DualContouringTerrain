@@ -79,10 +79,6 @@ void App::init()
 	//Tell glfw to call the function when window size changes
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-	//Compile Shader
-	Shader litShader("../../../src/Shaders/simple-lit.vert", "../../../src/Shaders/simple-lit.frag");
-	Shader unlitShader("../../../src/Shaders/Test/test.vert", "../../../src/Shaders/Test/test.frag");
-
 	
 	// set up vertex data (and buffer(s)) and configure vertex attributes
    // ------------------------------------------------------------------
@@ -172,7 +168,7 @@ void App::init()
 	std::vector<glm::vec3> terrainVertices, terrainNormals;
 	std::vector<unsigned int> terrainIndices;
 
-	DualContouring dualContouring(15, 15, 15);
+	DualContouring dualContouring(15, 15, 15, 1);
 	dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices);
 
 	//Create Sphere Actor
@@ -719,6 +715,7 @@ void App::init()
 		//}
 
 		sphereActor.Render();
+		dualContouring.DebugDrawVertices(m_currentCamera, std::make_shared<Settings>(settings));
 		//Render the UI
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
