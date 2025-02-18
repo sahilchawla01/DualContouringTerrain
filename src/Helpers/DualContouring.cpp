@@ -1,8 +1,14 @@
 #include "DualContouring.h"
 #include "Math/SDF.h"
 
-DualContouring::DualContouring()
-= default;
+
+DualContouring::DualContouring(const unsigned int& gridWidth, const unsigned int& gridHeight,
+	const unsigned int& gridDepth)
+{
+	this->m_gridWidth = gridWidth;
+	this->m_gridHeight = gridHeight;
+	this->m_gridDepth = gridDepth;
+}
 
 DualContouring::~DualContouring()
 = default;
@@ -109,4 +115,11 @@ const glm::vec3 DualContouring::CalculateSurfaceNormal(const glm::vec3& intersec
 	const float dz = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(0.f, 0.f, h), spherePosition, sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(0.f, 0.f, h), spherePosition, sphereRadius);
 
 	return glm::normalize(glm::vec3(dx, dy, dz));
+}
+
+void DualContouring::GenerateMesh(std::vector<glm::vec3>& vertices, std::vector<glm::vec3>& normals,
+	std::vector<unsigned int>& indices)
+{
+
+
 }

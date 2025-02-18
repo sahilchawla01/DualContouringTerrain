@@ -14,10 +14,10 @@
 #include "../Helpers/Math/SDF.h"
 #include "Actors/ACamera.h"
 #include "Helpers/DualContouring.h"
+#include <algorithm>
 
 
 //IMGUI INCLUDES
-#include <algorithm>
 
 #include "Helpers/imgui/imgui.h"
 #include "Helpers/imgui/imgui_impl_glfw.h"
@@ -189,11 +189,11 @@ void App::init()
 		PollSettings(window);
 
 		// Start the Dear ImGui frame
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-
 		{
+
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
 			ImGui::Begin("Dual Contouring Settings!");                          // Create a window called "Hello, world!" and append into it.
 
 			ImGui::Checkbox("Enable Cursor", &settings.bIsCursorEnabled);      // Edit bools storing our window open/close state
@@ -274,23 +274,6 @@ void App::init()
 								{
 									cornersToConsider |= 1 << i;
 								}
-							}
-
-							if (x == 4 && y == 4 && z == 5)
-							{
-								std::cout << "";
-							}
-							if (x == 4 && y == 4 && z == 6)
-							{
-								std::cout << "";
-							}
-							if (x == 3 && y == 4 && z == 5)
-							{
-								std::cout << "";
-							}
-							if (x == 3 && y == 4 && z == 6)
-							{
-								std::cout << "";
 							}
 
 							//If the voxel is completely within the surface, or outside the volume, ignore it.

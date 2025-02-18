@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClCompile Include="src\Actors\AActor.cpp" />
     <ClCompile Include="src\Actors\ACamera.cpp" />
+    <ClCompile Include="src\Actors\ASDFSphere.cpp" />
     <ClCompile Include="src\Application\app.cpp" />
     <ClCompile Include="src\Application\glad.c" />
     <ClCompile Include="src\Helpers\DualContouring.cpp" />
@@ -178,6 +179,7 @@
   <ItemGroup>
     <ClInclude Include="src\Actors\AActor.h" />
     <ClInclude Include="src\Actors\ACamera.h" />
+    <ClInclude Include="src\Actors\ASDFSphere.h" />
     <ClInclude Include="src\Application\app.h" />
     <ClInclude Include="src\Helpers\DualContouring.h" />
     <ClInclude Include="src\Helpers\imgui\imgui_impl_glfw.h" />
