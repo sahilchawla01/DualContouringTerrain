@@ -15,8 +15,8 @@ class ACamera;
 class AActor
 {
 public:
-	AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const glm::vec3& model_position = glm::vec3(0.0f), const glm::vec3& model_scale = glm::vec3(1.f), const std::weak_ptr<ACamera> currentCamera);
-	AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const std::vector<unsigned int>& model_indices, const glm::vec3& model_position = glm::vec3(0.0f), const glm::vec3& model_scale = glm::vec3(1.f), const std::weak_ptr<ACamera> currentCamera);
+	AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const std::weak_ptr<ACamera> currentCamera, const glm::vec3& model_position = glm::vec3(0.0f), const glm::vec3& model_scale = glm::vec3(1.f));
+	AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const std::vector<unsigned int>& model_indices, const std::weak_ptr<ACamera> currentCamera, const glm::vec3& model_position = glm::vec3(0.0f), const glm::vec3& model_scale = glm::vec3(1.f));
 
 	//Buffer Object ids
 	unsigned int VAO;
@@ -29,6 +29,7 @@ public:
 	//IMP!! Call after object is created | Initializes buffers, shaders, etc 
 	void Init();
 	glm::mat4 GetModelMatrix() const;
+	virtual void Render();
 
 private:
 	std::string actorName; 
@@ -54,7 +55,6 @@ protected:
 
 	virtual void SetupBuffers();
 	virtual void SetupShader();
-	virtual void Render();
 	virtual void UseShader();
 
 	virtual ~AActor() = default;

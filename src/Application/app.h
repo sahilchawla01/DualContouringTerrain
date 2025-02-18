@@ -28,7 +28,7 @@ public:
 	~App();
 
 private:
-	std::unique_ptr<ACamera> m_currentCamera;
+	std::shared_ptr<ACamera> m_currentCamera;
 
 	int window_width = 1200;
 	int window_height = 1080;

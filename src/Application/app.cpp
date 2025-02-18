@@ -11,7 +11,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "../Helpers/Shader.h"
-#include "../Helpers/Math/SDF.h"
 #include "Actors/ACamera.h"
 #include "Helpers/DualContouring.h"
 #include <algorithm>
@@ -177,7 +176,8 @@ void App::init()
 	dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices);
 
 	//Create Sphere Actor
-	ASDFSphere* sphereActor = new ASDFSphere()
+	ASDFSphere sphereActor("TestSphere", terrainVertices, terrainNormals, terrainIndices, m_currentCamera, glm::vec3(0.f), glm::vec3(1.f));
+	sphereActor.Init();
 
 	//Render frames
 	while(!glfwWindowShouldClose(window))
@@ -713,12 +713,12 @@ void App::init()
 			} */
 
 			//Now we can unbind the buffer
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			//Next unbind the VAO
-			glBindVertexArray(0);
-		}
+		//	glBindBuffer(GL_ARRAY_BUFFER, 0);
+		//	//Next unbind the VAO
+		//	glBindVertexArray(0);
+		//}
 
-
+		sphereActor.Render();
 		//Render the UI
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -757,7 +757,7 @@ void App::CreateInitActors()
 {
 
 	//Create camera
-	m_currentCamera = std::make_unique<ACamera>(glm::vec3(0.f, 0.f, 10.f), glm::vec3(0.f, 1.f, 0.f), settings.mouse_yaw, settings.mouse_pitch, static_cast<float>(this->window_width) / static_cast<float>(this->window_height));
+	m_currentCamera = std::make_shared<ACamera>(glm::vec3(0.f, 0.f, 10.f), glm::vec3(0.f, 1.f, 0.f), settings.mouse_yaw, settings.mouse_pitch, static_cast<float>(this->window_width) / static_cast<float>(this->window_height));
 
 }
 

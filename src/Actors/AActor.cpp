@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 #include <Helpers/Shader.h>
 
-AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const glm::vec3& model_position, const glm::vec3& model_scale, const std::weak_ptr<ACamera> currentCamera)
+AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const std::weak_ptr<ACamera> currentCamera, const glm::vec3& model_position, const glm::vec3& model_scale)
 {
 	this->actorName = name;
 	this->vertices = model_vertices;
@@ -18,8 +18,7 @@ AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vert
 	
 }
 
-AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals,
-	const std::vector<unsigned int>& model_indices, const glm::vec3& model_position, const glm::vec3& model_scale, const std::weak_ptr<ACamera> currentCamera)
+AActor::AActor(const std::string& name, const std::vector<glm::vec3>& model_vertices, const std::vector<glm::vec3>& model_normals, const std::vector<unsigned int>& model_indices, const std::weak_ptr<ACamera> currentCamera , const glm::vec3& model_position, const glm::vec3& model_scale)
 {
 	this->actorName = name;
 	this->vertices = model_vertices;
@@ -139,8 +138,6 @@ void AActor::SetupShader()
 void AActor::Render()
 {
 
-	const glm::mat4 mvp = GetMVPMatrix();
-
 	UseShader();
 
 	//Activate VAO
@@ -150,6 +147,7 @@ void AActor::Render()
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Normal shading
 
+
 	if (bShouldDrawEBO)
 	{
 
@@ -157,7 +155,7 @@ void AActor::Render()
 		
 	} else
 	{
-		glDrawArrays(GL_TRIANGLES, 0, static_cast<int>(vertices.size()) * 3);
+		glDrawArrays(GL_TRIANGLES, 0, static_cast<int>(vertices.size()) / 3);
 	}
 
 }

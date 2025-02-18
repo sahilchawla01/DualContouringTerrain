@@ -1,5 +1,8 @@
 #pragma once
-#include "AActor.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+//#include "AActor.h"
 
 enum class ECameraMoveDirection
 {
@@ -9,7 +12,7 @@ enum class ECameraMoveDirection
 	BACKWARD,
 };
 
-class ACamera : public AActor
+class ACamera
 {
 public:
 
