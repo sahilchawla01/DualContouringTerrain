@@ -4,7 +4,6 @@
 
 #include "app.h"
 
-#include <array>
 #include <iostream>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -13,12 +12,12 @@
 #include "../Helpers/Shader.h"
 #include "Actors/ACamera.h"
 #include "Helpers/DualContouring.h"
-#include <algorithm>
 
 
 //IMGUI INCLUDES
 
-#include "Actors/ASDFSphere.h"
+#include "Actors/AActor.h"
+#include "Enums/EShaderOption.h"
 #include "Helpers/imgui/imgui.h"
 #include "Helpers/imgui/imgui_impl_glfw.h"
 #include "Helpers/imgui/imgui_impl_opengl3.h"
@@ -103,8 +102,8 @@ void App::init()
 	dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices);
 
 	//Create Sphere Actor
-	ASDFSphere sphereActor("TestSphere", terrainVertices, terrainNormals, terrainIndices, m_currentCamera, glm::vec3(0.f), glm::vec3(1.f));
-	sphereActor.Init();
+	std::shared_ptr<AActor> sphereSDFActor = std::make_shared<AActor>("TestSphere", m_currentCamera);
+	sphereSDFActor->SetupMeshComponent(EShaderOption::lit, terrainVertices, terrainNormals, terrainIndices);
 
 	//Render frames
 	while(!glfwWindowShouldClose(window))
@@ -129,7 +128,7 @@ void App::init()
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
-			ImGui::Begin("Dual Contouring Settings!");                          // Create a window called "Hello, world!" and append into it.
+			ImGui::Begin("Dual Contouring Settings!");                        
 
 			ImGui::Checkbox("Enable Cursor", &settings.bIsCursorEnabled);      // Edit bools storing our window open/close state
 			if (ImGui::CollapsingHeader("Debug"))
@@ -148,9 +147,9 @@ void App::init()
 		//~~ Handle Rendering ~~
 
 		//Render the SDF sphere
-		sphereActor.Render();
+		sphereSDFActor->Render();
 		//Render dual contouring vertices
-		dualContouring.DebugDrawVertices(sphereActor.GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));
+		dualContouring.DebugDrawVertices(sphereSDFActor->GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));
 
 		//Render the UI
 		ImGui::Render();

@@ -418,48 +418,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 	}
 
 
-	
-
-		//Draw voxels
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	//	if (settings.bIsVoxelDebugEnabled)
-	//	{
-	//		for (int x = 0; x < gridWidth * voxelSize; x += voxelSize)
-	//		{
-	//			for (int y = 0; y < gridHeight * voxelSize; y += voxelSize)
-	//			{
-	//				for (int z = 0; z < gridDepth * voxelSize; z += voxelSize)
-	//				{
-
-
-	//					glm::vec3 relativePos(static_cast<float>(x) - gridCenter.x, static_cast<float>(y) - gridCenter.y, static_cast<float>(z) - gridCenter.z);
-
-	//					relativePos += gridPosition;
-
-	//					glm::mat4 model = glm::mat4(1.0f);
-	//					model = glm::translate(model, relativePos);
-	//					model = glm::scale(model, glm::vec3(0.9f, 0.9f, 0.9f));
-	//					glm::mat4 view = m_currentCamera->GetViewMatrix();
-	//					glm::mat4 projection = m_currentCamera->GetProjectionMatrix();
-	//					glm::mat4 mvp = projection * view * model;
-	//					glm::vec3 voxelCubeColor(1.f, 0.984f, 0.f);
-	//					unlitShader.setMat4("mvp", mvp);
-	//					unlitShader.setVec3("color", voxelCubeColor);
-
-	//					glDrawArrays(GL_TRIANGLES, 0, 36);
-
-	//				}
-
-	//			}
-	//		}
-	//	}
-
-	//	//Unbind the VAO
-	//	glBindVertexArray(0);
-
-	//}
-
-
 	//Iterate through the cubes again, and make the edge connections
 	for (int x = 0; x < this->m_gridWidth * m_voxelSize; x += m_voxelSize)
 	{
@@ -551,34 +509,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 	normals = modelNormals;
 	indices = modelIndices;
 
-	//Draw the model
-	//if (settings.bViewMesh)
-	//{
-
-
-	//	glm::mat4 view = m_currentCamera->GetViewMatrix();
-
-	//	glm::mat4 projection = m_currentCamera->GetProjectionMatrix();
-
-	//	glm::mat4 modelViewMatrix = view * gridModelMatrix;
-	//	glm::mat4 mvp = projection * modelViewMatrix;
-
-	//	litShader.setMat4("modelViewMatrix", modelViewMatrix);
-	//	litShader.setVec3("objectColor", glm::vec3(1.0));
-	//	litShader.setMat4("mvp", mvp);
-	//	//unlitShader.setMat4("mvp", mvp);
-	//	//unlitShader.setVec3("color", glm::vec3(0.8f));
-
-	//	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Normal shading
-
-	//	glDrawElements(GL_TRIANGLES, static_cast<int>(modelIndices.size()), GL_UNSIGNED_INT, 0);
-
-	//}
-
-	////Now we can unbind the buffer
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	////Next unbind the VAO
-	//glBindVertexArray(0);
 }
 
 int DualContouring::GetUniqueIndexForGrid(const int x, const int y, const int z, const int gridWidth,

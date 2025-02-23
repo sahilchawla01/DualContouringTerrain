@@ -60,7 +60,10 @@
     <ClCompile Include="src\Helpers\imgui\imgui_impl_glfw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Actors\ASDFSphere.cpp">
+    <ClCompile Include="src\Components\UActorComponent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Components\UMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -116,7 +119,13 @@
     <ClInclude Include="src\Helpers\imgui\imgui_impl_opengl3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Actors\ASDFSphere.h">
+    <ClInclude Include="src\Components\UActorComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Components\UMeshComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Enums\EShaderOption.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
