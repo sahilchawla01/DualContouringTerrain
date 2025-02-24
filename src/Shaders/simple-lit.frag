@@ -64,8 +64,8 @@ void main()
 	vec3 phongResult = (ambient + diffuse + specular) * objectColor;
 
 	//-- Add a little color from Position as well -- 
-	phongResult = phongResult + 0.1 * vPos;
-	//phongResult = vColor;
+	//phongResult = phongResult + 0.1 * vPos;
+	phongResult = vColor;
 
 	FragColor = vec4(phongResult, 1.0);
 }

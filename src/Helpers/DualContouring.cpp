@@ -511,6 +511,17 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
 
 
+									//Triangle 1 Color
+									float triangleColor = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									//Push 3 floats (vec3 color) per vertex i.e. 3 vertices
+									for (int i = 0; i < 3; ++i)
+									{
+										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColor);
+										
+									}
+
 								}
 								else // utilize indexing to render vertices
 								{
@@ -519,11 +530,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 									modelIndices.push_back(vertexIndices[2]);
 								}
 
-
-								//Triangle 1 Color
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
 
 								//Triangle 2
 
@@ -569,6 +575,16 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
 									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
 
+									float triangleColor = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									//Push 3 floats (vec3 color) per vertex i.e. 3 vertices
+									for (int i = 0; i < 3; ++i)
+									{
+										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColor);
+
+									}
+
 								}
 								else // utilize indexing to render vertices
 								{
@@ -576,11 +592,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 									modelIndices.push_back(vertexIndices[1]);
 									modelIndices.push_back(vertexIndices[2]);
 								}
-
-								//Triangle 2 Color
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
 
 							}
 							else //Reverse indices order otherwise (-ve to +ve transition)
@@ -629,6 +640,16 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 1]);
 									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 2]);
 
+									float triangleColor = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									//Push 3 floats (vec3 color) per vertex i.e. 3 vertices
+									for (int i = 0; i < 3; ++i)
+									{
+										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColor);
+
+									}
+
 
 								}
 								else // utilize indexing to render vertices
@@ -637,11 +658,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 									modelIndices.push_back(vertexIndices[2]);
 									modelIndices.push_back(vertexIndices[3]);
 								}
-
-								//Triangle 1 Color
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
 
 								//Triangle 2
 								/*modelIndices.push_back(vertexIndices[0]);
@@ -685,7 +701,17 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 									//Normal 3
 									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
 									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2] );
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
+
+									float triangleColor = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									//Push 3 floats (vec3 color) per vertex i.e. 3 vertices
+									for (int i = 0; i < 3; ++i)
+									{
+										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColor);
+
+									}
 
 
 								}
@@ -695,12 +721,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 									modelIndices.push_back(vertexIndices[2]);
 									modelIndices.push_back(vertexIndices[1]);
 								}
-
-								//Triangle 2 Color
-								//Get new color
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
-								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
 							}
 
 						}
