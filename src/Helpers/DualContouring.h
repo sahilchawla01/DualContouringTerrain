@@ -22,7 +22,7 @@ public:
 	static const glm::vec3 GetIntersectionPoint(const glm::vec3& firstPosition, const glm::vec3& secondPosition, const glm::vec3& spherePosition, const float& sphereRadius, int totalSteps = 100);
 	static const glm::vec3 CalculateSurfaceNormal(const glm::vec3& intersectionPos, const glm::vec3& spherePosition, const float& sphereRadius);
 
-	void GenerateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices);
+	void GenerateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices, std::vector<float>& colors);
 	void DebugDrawVertices(const std::vector<float>& vertices,  std::weak_ptr<ACamera> curCamera, std::weak_ptr<Settings> settings);
 
 private:

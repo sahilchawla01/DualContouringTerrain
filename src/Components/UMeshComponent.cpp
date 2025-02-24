@@ -6,11 +6,12 @@
 
 
 UMeshComponent::UMeshComponent(const std::vector<float>& vertices, const std::vector<float>& normals,
-                               const std::vector<unsigned int>& indices, const std::weak_ptr<const AActor>  owningActor) : UActorComponent(owningActor)
+                               const std::vector<unsigned int>& indices, const std::vector<float>& colors, const std::weak_ptr<const AActor>  owningActor) : UActorComponent(owningActor)
 {
 	this->vertices = vertices;
 	this->normals = normals;
 	this->indices = indices;
+	this->colors = colors;
 }
 
 std::vector<float> UMeshComponent::GetVertices() const
@@ -46,7 +47,7 @@ void UMeshComponent::Render()
 	}
 	else
 	{
-		glDrawArrays(GL_TRIANGLES, 0, static_cast<int>(vertices.size()) * 3);
+		glDrawArrays(GL_TRIANGLES, 0, static_cast<int>(vertices.size() / 3));
 	}
 }
 
@@ -54,11 +55,14 @@ void UMeshComponent::SetupBuffers()
 {
 	bool bShouldSetupEBO = !(this->indices.empty());
 	bool bShouldBindNormals = !(this->normals.empty());
+	bool bShouldBindColors = !(this->colors.empty());
 
 	//Generate Vertex Array Object
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &vertices_VBO);
 	if (bShouldBindNormals) glGenBuffers(1, &normal_VBO);
+	//Generate VBO for colors
+	if (bShouldBindColors) glGenBuffers(1, &colors_VBO);
 	//Generate Element Buffer Object
 	if (bShouldSetupEBO) glGenBuffers(1, &EBO);
 
@@ -90,6 +94,17 @@ void UMeshComponent::SetupBuffers()
 		// 2. then set the vertex attributes pointers
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(1);
+	}
+
+	if (bShouldBindColors)
+	{
+		//Copy normal array in a buffer
+		glBindBuffer(GL_ARRAY_BUFFER, colors_VBO);
+		//Copy data to the buffer
+		glBufferData(GL_ARRAY_BUFFER, this->colors.size() * sizeof(float), this->colors.data(), GL_STATIC_DRAW);
+		// 2. then set the vertex attributes pointers
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(2);
 	}
 
 
@@ -183,5 +198,6 @@ UMeshComponent::~UMeshComponent()
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &vertices_VBO);
 	glDeleteBuffers(1, &normal_VBO);
+	glDeleteBuffers(1, &colors_VBO);
 
 }

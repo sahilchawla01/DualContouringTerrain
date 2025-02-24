@@ -95,11 +95,11 @@ void App::init()
 
 
 	// Setup Grid
-	std::vector<float> terrainVertices, terrainNormals;
+	std::vector<float> terrainVertices, terrainNormals, terrainDebugColors;
 	std::vector<unsigned int> terrainIndices;
 
 	DualContouring dualContouring(15, 15, 15, 1);
-	dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices);
+	dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
 
 	//Create Sphere Actor
 	std::shared_ptr<AActor> sphereSDFActor = std::make_shared<AActor>("TestSphere", m_currentCamera);

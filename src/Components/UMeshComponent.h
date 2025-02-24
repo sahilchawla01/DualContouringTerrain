@@ -12,7 +12,7 @@ class UMeshComponent : public UActorComponent
 {
 public:
 
-	UMeshComponent(const std::vector<float>& vertices, const std::vector<float>& normals, const std::vector<unsigned int>& indices, const std::weak_ptr<const AActor> owningActor);
+	UMeshComponent(const std::vector<float>& vertices, const std::vector<float>& normals, const std::vector<unsigned int>& indices, const std::vector<float>& colors, const std::weak_ptr<const AActor> owningActor);
 	~UMeshComponent() override;
 
 public:
@@ -29,11 +29,13 @@ protected:
 	unsigned int VAO;
 	unsigned int vertices_VBO;
 	unsigned int normal_VBO;
+	unsigned int colors_VBO;
 	unsigned int EBO;
 
 	// MESH DETAILS
 	std::vector<float> vertices;
 	std::vector<float> normals;
+	std::vector<float> colors;
 	std::vector<unsigned int> indices;
 
 	//MISC:

@@ -21,7 +21,7 @@ public:
 	unsigned int ID;
 
 	//Constructor reads and builds the path || IMP!! Path is relative to the working directory of the project, i.e. the project directory
-	Shader(const char* vertexPath, const char* fragmentPath);
+	Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath = nullptr);
 	//Activate the shader
 	void use();
 	//Utility uniform functions

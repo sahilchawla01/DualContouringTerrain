@@ -174,6 +174,7 @@
     <ClCompile Include="src\Helpers\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\Helpers\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\Helpers\imgui\imgui_stdlib.cpp" />
+    <ClCompile Include="src\Helpers\Settings.cpp" />
     <ClCompile Include="src\Helpers\Shader.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
@@ -195,12 +196,14 @@
     <ClInclude Include="src\Helpers\imgui\imstb_textedit.h" />
     <ClInclude Include="src\Helpers\imgui\imstb_truetype.h" />
     <ClInclude Include="src\Helpers\imgui\imgui_stdlib.h" />
+    <ClInclude Include="src\Helpers\Math\RNG.h" />
     <ClInclude Include="src\Helpers\Math\SDF.h" />
     <ClInclude Include="src\Helpers\Settings.h" />
     <ClInclude Include="src\Helpers\Shader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Helpers\imgui\imgui.natstepfilter" />
+    <None Include="src\Shaders\GeometryShaders\wireframe_on_mesh.gs" />
     <None Include="src\Shaders\simple-lit.frag" />
     <None Include="src\Shaders\simple-lit.vert" />
     <None Include="src\Shaders\Test\test.frag" />

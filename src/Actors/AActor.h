@@ -26,7 +26,7 @@ public:
 	glm::mat4 GetModelMatrix() const;
 
 	//Creates and sets shaders, and buffers for mesh component
-	void SetupMeshComponent(EShaderOption e_shaderOption, const std::vector<float>& model_vertices, const std::vector<float>& model_normals, const std::vector<unsigned int>& model_indices);
+	void SetupMeshComponent(EShaderOption e_shaderOption, const std::vector<float>& model_vertices, const std::vector<float>& model_normals, const std::vector<unsigned int>& model_indices, const std::vector<float>& model_colors = std::vector<float>{});
 	virtual void Render();
 
 private:

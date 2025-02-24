@@ -7,6 +7,7 @@
 #include <Helpers/Settings.h>
 #include <Actors/ACamera.h>
 #include "Shader.h"
+#include "Math/RNG.h"
 #include "Math/SDF.h"
 
 
@@ -238,19 +239,23 @@ void DualContouring::DebugDrawVertices(const std::vector<float>& vertices, std::
 }
 
 void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<float>& normals,
-                                  std::vector<unsigned int>& indices)
+                                  std::vector<unsigned int>& indices, std::vector<float>& colors)
 {
-
 	std::vector<glm::vec3> grid;
 	std::vector<float> modelVertices;
 	std::vector<float> modelNormals;
 	std::vector<unsigned int> modelIndices;
+	std::vector<float> modelVertexColors;
+
+	std::vector<float> modelDuplicateVertices;
+	std::vector<float> modelDuplicateNormals;
+
 	grid.reserve(this->m_gridWidth * this->m_gridHeight * this->m_gridDepth);
 
 	glm::vec3 gridPosition(0.f, 0.f, 0.f);
 
 	glm::mat4 gridModelMatrix(1.f);
-	glm::translate(gridModelMatrix, gridPosition);
+	gridModelMatrix = glm::translate(gridModelMatrix, gridPosition);
 
 	glm::vec3 gridCenter((this->m_gridWidth * this->m_voxelSize) / 2, (this->m_gridHeight * this->m_voxelSize) / 2, (this->m_gridDepth * this->m_voxelSize) / 2);
 
@@ -436,24 +441,23 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 					{
 
 						std::vector<unsigned int> vertexIndices;
-						std::vector<std::vector<int>> debugIndices;
+						std::vector<unsigned int> actualVertexIndices;
 
 						//Store vertex indices for neighboring voxels
 						for (int i = 0; i < 4; ++i)
 						{
-							int curX = x + static_cast<int>(DualContouring::adjacentVoxelsOffsets[axis][i].x);
-							int curY = y + static_cast<int>(DualContouring::adjacentVoxelsOffsets[axis][i].y);
-							int curZ = z + static_cast<int>(DualContouring::adjacentVoxelsOffsets[axis][i].z);
+							int curX = x + static_cast<int>(adjacentVoxelsOffsets[axis][i].x);
+							int curY = y + static_cast<int>(adjacentVoxelsOffsets[axis][i].y);
+							int curZ = z + static_cast<int>(adjacentVoxelsOffsets[axis][i].z);
 
 							auto it = voxelVertexIndexMap.find(GetUniqueIndexForGrid(curX, curY, curZ, this->m_gridWidth, this->m_gridHeight));
-
-							debugIndices.push_back({ curX, curY, curZ });
 
 							if (it == voxelVertexIndexMap.end())
 								continue;  // If voxel is missing, just skip it
 
 							// Store the found vertex index
 							vertexIndices.push_back(it->second / 3);
+							actualVertexIndices.push_back(it->second);
 						}
 
 
@@ -465,31 +469,238 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						//Join all 4 vertices in those voxels
 						if (vertexIndices.size() == 4)
 						{
+
 							//If the transition is from + to -ve 
 							if (adjacentEdgesIntersection[axis].second == true)
 							{
+
 								//Triangle 1
-								modelIndices.push_back(vertexIndices[1]);
-								modelIndices.push_back(vertexIndices[3]);
-								modelIndices.push_back(vertexIndices[2]);
+
+								// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
+								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								{
+									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1] + 2]);
+
+									//Pos 2
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[3]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[3] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[3] + 2]);
+
+									//Pos 3
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2] + 2]);
+
+									//Similarly, push duplicate normals
+									//Normal 1
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
+
+									//Normal 2
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 2]);
+
+									//Normal 3
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
+
+
+								}
+								else // utilize indexing to render vertices
+								{
+									modelIndices.push_back(vertexIndices[1]);
+									modelIndices.push_back(vertexIndices[3]);
+									modelIndices.push_back(vertexIndices[2]);
+								}
+
+
+								//Triangle 1 Color
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
 
 								//Triangle 2
-								modelIndices.push_back(vertexIndices[0]);
+
+								/*modelIndices.push_back(vertexIndices[0]);
 								modelIndices.push_back(vertexIndices[1]);
-								modelIndices.push_back(vertexIndices[2]);
+								modelIndices.push_back(vertexIndices[2]);*/
+								/*	modelDuplicateVertices.push_back(modelVertices[vertexIndices[0]]);
+									modelDuplicateVertices.push_back(modelVertices[vertexIndices[1]]);
+									modelDuplicateVertices.push_back(modelVertices[vertexIndices[2]]);*/
+
+									// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
+								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								{
+
+									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[0]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[0] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[0] + 2]);
+
+									//Pos 2
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1] + 2]);
+
+									//Pos 3
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2] + 2]);
+
+									//Similarly, push duplicate normals
+									//Normal 1
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 2]);
+
+									//Normal 2
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
+
+									//Normal 3
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
+
+								}
+								else // utilize indexing to render vertices
+								{
+									modelIndices.push_back(vertexIndices[0]);
+									modelIndices.push_back(vertexIndices[1]);
+									modelIndices.push_back(vertexIndices[2]);
+								}
+
+								//Triangle 2 Color
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
 
 							}
 							else //Reverse indices order otherwise (-ve to +ve transition)
 							{
-								//Triangle 1
-								modelIndices.push_back(vertexIndices[1]);
-								modelIndices.push_back(vertexIndices[2]);
-								modelIndices.push_back(vertexIndices[3]);
+								////Triangle 1
+								//modelIndices.push_back(vertexIndices[1]);
+								//modelIndices.push_back(vertexIndices[2]);
+								//modelIndices.push_back(vertexIndices[3]);
+
+								//modelDuplicateVertices.push_back(modelVertices[vertexIndices[1]]);/*
+								//modelDuplicateVertices.push_back(modelVertices[vertexIndices[2]]);
+								//modelDuplicateVertices.push_back(modelVertices[vertexIndices[3]]);*/
+
+								// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
+								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								{
+
+									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1] + 2]);
+
+									//Pos 2
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2] + 2]);
+
+									//Pos 3
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[3]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[3] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[3] + 2]);
+
+									//Similarly, push duplicate normals
+									//Normal 1
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
+
+									//Normal 2
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
+
+									//Normal 3
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 2]);
+
+
+								}
+								else // utilize indexing to render vertices
+								{
+									modelIndices.push_back(vertexIndices[1]);
+									modelIndices.push_back(vertexIndices[2]);
+									modelIndices.push_back(vertexIndices[3]);
+								}
+
+								//Triangle 1 Color
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
 
 								//Triangle 2
-								modelIndices.push_back(vertexIndices[0]);
+								/*modelIndices.push_back(vertexIndices[0]);
 								modelIndices.push_back(vertexIndices[2]);
-								modelIndices.push_back(vertexIndices[1]);
+								modelIndices.push_back(vertexIndices[1]);*/
+
+								//modelDuplicateVertices.push_back(modelVertices[vertexIndices[0]]);/*
+								//modelDuplicateVertices.push_back(modelVertices[vertexIndices[2]]);
+								//modelDuplicateVertices.push_back(modelVertices[vertexIndices[1]]);*/
+
+								// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
+								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								{
+
+									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[0]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[0] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[0] + 2]);
+
+									//Pos 2
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[2] + 2]);
+
+									//Pos 3
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1]]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1] + 1]);
+									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1] + 2]);
+
+									//Similarly, push duplicate normals
+									//Normal 1
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 2]);
+
+									//Normal 2
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
+
+									//Normal 3
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
+									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2] );
+
+
+								}
+								else // utilize indexing to render vertices
+								{
+									modelIndices.push_back(vertexIndices[0]);
+									modelIndices.push_back(vertexIndices[2]);
+									modelIndices.push_back(vertexIndices[1]);
+								}
+
+								//Triangle 2 Color
+								//Get new color
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
+								modelVertexColors.push_back(RNG::GetRandomFloatNumber(0.0f, 1.0f));
 							}
 
 						}
@@ -505,9 +716,13 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 	}
 
 	//Finally assign the mesh details
-	vertices = modelVertices;
-	normals = modelNormals;
+
+	//Set vertices to duplicate mode or indices mode
+	vertices = (Settings::bIsDuplicateVerticesDebugEnabled) ? modelDuplicateVertices : modelVertices;
+	normals = (Settings::bIsDuplicateVerticesDebugEnabled) ? modelDuplicateNormals : modelNormals;
 	indices = modelIndices;
+	colors = modelVertexColors;
+
 
 }
 

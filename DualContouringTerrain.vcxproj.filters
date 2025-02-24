@@ -66,6 +66,9 @@
     <ClCompile Include="src\Components\UMeshComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Helpers\Settings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application\app.h">
@@ -128,6 +131,9 @@
     <ClInclude Include="src\Enums\EShaderOption.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Helpers\Math\RNG.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Shaders\Test\test.vert" />
@@ -135,6 +141,7 @@
     <None Include="src\Shaders\simple-lit.frag" />
     <None Include="src\Shaders\simple-lit.vert" />
     <None Include="src\Helpers\imgui\imgui.natstepfilter" />
+    <None Include="src\Shaders\GeometryShaders\wireframe_on_mesh.gs" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="src\Helpers\imgui\imgui.natvis" />

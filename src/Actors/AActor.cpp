@@ -84,10 +84,10 @@ AActor::~AActor()
 }
 
 void AActor::SetupMeshComponent(EShaderOption e_shaderOption, const std::vector<float>& model_vertices,
-	const std::vector<float>& model_normals, const std::vector<unsigned int>& model_indices)
+	const std::vector<float>& model_normals, const std::vector<unsigned int>& model_indices, const std::vector<float>& model_colors)
 {
 	//Create mesh and attach mesh component
-	meshComponent = std::make_shared<UMeshComponent>(model_vertices, model_normals, model_indices, shared_from_this());
+	meshComponent = std::make_shared<UMeshComponent>(model_vertices, model_normals, model_indices, model_colors, shared_from_this());
 
 	meshComponent->Init(e_shaderOption);
 
