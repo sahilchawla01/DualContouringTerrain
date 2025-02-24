@@ -103,7 +103,7 @@ void App::init()
 
 	//Create Sphere Actor
 	std::shared_ptr<AActor> sphereSDFActor = std::make_shared<AActor>("TestSphere", m_currentCamera);
-	sphereSDFActor->SetupMeshComponent(EShaderOption::lit, terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+	sphereSDFActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ?  EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
 
 	//Render frames
 	while(!glfwWindowShouldClose(window))

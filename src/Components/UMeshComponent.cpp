@@ -62,7 +62,7 @@ void UMeshComponent::SetupBuffers()
 	glGenBuffers(1, &vertices_VBO);
 	if (bShouldBindNormals) glGenBuffers(1, &normal_VBO);
 	//Generate VBO for colors
-	if (bShouldBindColors) glGenBuffers(1, &colors_VBO);
+ 	if (bShouldBindColors) glGenBuffers(1, &colors_VBO);
 	//Generate Element Buffer Object
 	if (bShouldSetupEBO) glGenBuffers(1, &EBO);
 
@@ -132,6 +132,12 @@ void UMeshComponent::SetupShader(EShaderOption shaderOption)
 			currentShader = std::make_unique<Shader>("../../../src/Shaders/simple-lit.vert", "../../../src/Shaders/simple-lit.frag");
 			break;
 		}
+		case EShaderOption::flat_shade:
+		{
+			//Set current shader
+			currentShader = std::make_unique<Shader>("../../../src/Shaders/flat-shade.vert", "../../../src/Shaders/flat-shade.frag");
+			break;
+		}
 		default: //Default shader is unlit
 		{
 			currentShader = std::make_unique<Shader>("../../../src/Shaders/Test/test.vert", "../../../src/Shaders/Test/test.frag");
@@ -163,6 +169,11 @@ void UMeshComponent::UseShader()
 			currentShader->setMat4("mvp", mvpMatrix);
 			//By default, color is white
 			currentShader->setVec3("color", glm::vec3(1.0, 1.0, 1.0));
+			break;
+		}
+	    case EShaderOption::flat_shade:
+		{
+			currentShader->setMat4("mvp", mvpMatrix);
 			break;
 		}
 		case EShaderOption::lit:

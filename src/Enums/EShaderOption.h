@@ -3,5 +3,6 @@
 enum class EShaderOption
 {
 	unlit,
-	lit
+	lit,
+	flat_shade
 };

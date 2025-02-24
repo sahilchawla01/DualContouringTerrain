@@ -203,6 +203,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Helpers\imgui\imgui.natstepfilter" />
+    <None Include="src\Shaders\flat-shade.frag" />
+    <None Include="src\Shaders\flat-shade.vert" />
     <None Include="src\Shaders\GeometryShaders\wireframe_on_mesh.gs" />
     <None Include="src\Shaders\simple-lit.frag" />
     <None Include="src\Shaders\simple-lit.vert" />

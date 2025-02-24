@@ -496,29 +496,31 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 
 									//Similarly, push duplicate normals
 									//Normal 1
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
 
-									//Normal 2
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 2]);
+									////Normal 2
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 2]);
 
-									//Normal 3
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
+									////Normal 3
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
 
 
 									//Triangle 1 Color
-									float triangleColor = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorR = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorG = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorB = RNG::GetRandomFloatNumber(0.0f, 1.0f);
 									//Push 3 floats (vec3 color) per vertex i.e. 3 vertices
 									for (int i = 0; i < 3; ++i)
 									{
-										modelVertexColors.push_back(triangleColor);
-										modelVertexColors.push_back(triangleColor);
-										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColorR);
+										modelVertexColors.push_back(triangleColorG);
+										modelVertexColors.push_back(triangleColorB);
 										
 									}
 
@@ -561,27 +563,29 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 
 									//Similarly, push duplicate normals
 									//Normal 1
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 2]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 2]);
 
-									//Normal 2
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
+									////Normal 2
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
 
-									//Normal 3
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
+									////Normal 3
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
 
-									float triangleColor = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorR = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorG = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorB = RNG::GetRandomFloatNumber(0.0f, 1.0f);
 									//Push 3 floats (vec3 color) per vertex i.e. 3 vertices
 									for (int i = 0; i < 3; ++i)
 									{
-										modelVertexColors.push_back(triangleColor);
-										modelVertexColors.push_back(triangleColor);
-										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColorR);
+										modelVertexColors.push_back(triangleColorG);
+										modelVertexColors.push_back(triangleColorB);
 
 									}
 
@@ -626,27 +630,29 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 
 									//Similarly, push duplicate normals
 									//Normal 1
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
 
-									//Normal 2
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
+									////Normal 2
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
 
-									//Normal 3
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 2]);
+									////Normal 3
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[3] + 2]);
 
-									float triangleColor = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorR = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorG = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorB = RNG::GetRandomFloatNumber(0.0f, 1.0f);
 									//Push 3 floats (vec3 color) per vertex i.e. 3 vertices
 									for (int i = 0; i < 3; ++i)
 									{
-										modelVertexColors.push_back(triangleColor);
-										modelVertexColors.push_back(triangleColor);
-										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColorR);
+										modelVertexColors.push_back(triangleColorG);
+										modelVertexColors.push_back(triangleColorB);
 
 									}
 
@@ -689,27 +695,29 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 
 									//Similarly, push duplicate normals
 									//Normal 1
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 2]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[0] + 2]);
 
-									//Normal 2
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
+									////Normal 2
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[2] + 2]);
 
-									//Normal 3
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
-									modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
+									////Normal 3
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1]]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 1]);
+									//modelDuplicateNormals.push_back(modelNormals[actualVertexIndices[1] + 2]);
 
-									float triangleColor = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorR = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorG = RNG::GetRandomFloatNumber(0.0f, 1.0f);
+									float triangleColorB = RNG::GetRandomFloatNumber(0.0f, 1.0f);
 									//Push 3 floats (vec3 color) per vertex i.e. 3 vertices
 									for (int i = 0; i < 3; ++i)
 									{
-										modelVertexColors.push_back(triangleColor);
-										modelVertexColors.push_back(triangleColor);
-										modelVertexColors.push_back(triangleColor);
+										modelVertexColors.push_back(triangleColorR);
+										modelVertexColors.push_back(triangleColorG);
+										modelVertexColors.push_back(triangleColorB);
 
 									}
 

@@ -23,7 +23,6 @@ uniform vec3 objectColor;
 
 
 in vec3 vPos; 
-in vec3 vColor; 
 in vec3 normal;
 in vec3 FragViewPosition;
 
@@ -65,7 +64,6 @@ void main()
 
 	//-- Add a little color from Position as well -- 
 	//phongResult = phongResult + 0.1 * vPos;
-	phongResult = vColor;
 
 	FragColor = vec4(phongResult, 1.0);
 }
