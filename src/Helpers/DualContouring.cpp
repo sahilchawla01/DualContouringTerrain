@@ -200,40 +200,25 @@ void DualContouring::DebugDrawVertices(const std::vector<float>& vertices, std::
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Normal shading
 		//Draw vertex position
-		for (int x = 0; x < this->m_gridWidth * this->m_voxelSize; x += this->m_voxelSize)
+		for (size_t index = 0; index < vertices.size(); index += 3)
 		{
-			for (int y = 0; y < this->m_gridHeight * this->m_voxelSize; y += this->m_voxelSize)
-			{
-				for (int z = 0; z < this->m_gridDepth * this->m_voxelSize; z += this->m_voxelSize)
-				{
-					//If a vertex isn't there in a voxel, skip. 
-					if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)) == voxelVertexIndexMap.end())
-					{
-						continue;
-					}
+			glm::vec3 vertexPos(vertices[index], vertices[index + 1], vertices[index + 2]);
 
-					//Draw vertex position
-					int modelVerticesIndex = voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)];
-					glm::vec3 vertexPos(vertices[modelVerticesIndex], vertices[modelVerticesIndex + 1], vertices[modelVerticesIndex + 2]);
+			//Create MVP
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, vertexPos);
+			model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 
-					//Create MVP
-					glm::mat4 model = glm::mat4(1.0f);
-					model = glm::translate(model, vertexPos);
-					model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+			glm::mat4 view = curCamera.lock()->GetViewMatrix();
 
-					glm::mat4 view = curCamera.lock()->GetViewMatrix();
+			glm::mat4 projection = curCamera.lock()->GetProjectionMatrix();
 
-					glm::mat4 projection = curCamera.lock()->GetProjectionMatrix();
+			glm::mat4 mvp = projection * view * model;
+			glm::vec3 debugCubeColor(0.027f, 0.843f, 1.0f);
+			unlitShader.setMat4("mvp", mvp);
+			unlitShader.setVec3("color", debugCubeColor);
 
-					glm::mat4 mvp = projection * view * model;
-					glm::vec3 debugCubeColor(0.027f, 0.843f, 1.0f);
-					unlitShader.setMat4("mvp", mvp);
-					unlitShader.setVec3("color", debugCubeColor);
-
-					glDrawArrays(GL_TRIANGLES, 0, 36);
-
-				}
-			}
+			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 	}
 }
