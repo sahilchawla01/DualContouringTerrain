@@ -8,7 +8,7 @@ class QEFSolver
 {
 public:
 
-	static glm::vec3 ComputeBestVertexPosition(const std::vector<VertexHermiteData>& hermiteDataPoints)
+	static glm::vec3 ComputeBestVertexPosition(const std::vector<HermiteData>& hermiteDataPoints)
 	{
 
         // Define A^T A and A^T b matrices

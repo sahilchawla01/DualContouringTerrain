@@ -291,12 +291,26 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 
 					//Array describes if an intersection occurs (first element), and if so, if intersection is + to -ve (second element) is true, else false.
 
-					std::array<std::pair<bool, bool>, 3> adjacentEdgesCrossingOver{ {
+	/*				std::array<std::pair<bool, bool>, 3> adjacentEdgesCrossingOver{ {
 							std::make_pair(false, false),
 							std::make_pair(false, false),
 							std::make_pair(false, false),
 					} };
-	
+	*/
+					HermiteData defaultHermiteData { glm::vec3(0), glm::vec3(1, 0, 0), std::numeric_limits<float>::min(), false };
+
+					std::array<HermiteData, 3> edgeHermiteDataArray
+					{
+						{
+							defaultHermiteData,
+						    defaultHermiteData,
+						    defaultHermiteData,
+						}
+					};
+
+					//If none of the 3 adjacent edges have an intersection, it is true.
+					bool bNoIntersectionFor3AdjacentEdges = true;
+
 					for (int i = 0; i < 12; ++i)
 					{
 						const int cornerIndex1 = edgePairs[i].first;
@@ -313,30 +327,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						}
 
 
-						//Crossing over has occured, check if edge is one of the 3 adjacent left most corner ones, and set the value.
-						if (i == 0)
-						{
-							//Mark intersection occurred 
-							adjacentEdgesCrossingOver[0].first = true;
-							//If intersection is from + to -ve, mark as true, else false
-							adjacentEdgesCrossingOver[0].second = (m1 < m2);
-
-						}
-						else if (i == 3)
-						{
-							//Mark intersection occurred 
-							adjacentEdgesCrossingOver[1].first = true;
-							//If intersection is from + to -ve, mark as true, else false
-							adjacentEdgesCrossingOver[1].second = (m1 < m2);
-						}
-						else if (i == 8)
-						{
-							//Mark intersection occurred 
-							adjacentEdgesCrossingOver[2].first = true;
-							//If intersection is from + to -ve, mark as true, else false
-							adjacentEdgesCrossingOver[2].second = (m1 < m2);
-						}
-
 						//Find position along the edge where surface crosses signs
 
 						//TODO: convert position from grid relative to SDF center relative
@@ -351,12 +341,66 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						//TODO: SAnity check whether point is within voxel
 
 						//Calculate normal using Finite Sum Difference
-						intersectionNormals.push_back(CalculateSurfaceNormal(currIntersectionPoint, gridPosition, 4.f));
+						const glm::vec3 intersectionNormal = CalculateSurfaceNormal(currIntersectionPoint, gridPosition, 4.f);
+						intersectionNormals.push_back(intersectionNormal);
+
+						//Crossing over has occured, check if edge is one of the 3 adjacent left most corner ones, and set the value.
+						if (i == 0)
+						{
+							////Mark intersection occurred 
+							//adjacentEdgesCrossingOver[0].first = true;
+							////If intersection is from + to -ve, mark as true, else false
+							//adjacentEdgesCrossingOver[0].second = (m1 < m2);
+
+							edgeHermiteDataArray[0].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							edgeHermiteDataArray[0].normal = intersectionNormal;
+							edgeHermiteDataArray[0].position = currIntersectionPoint;
+							edgeHermiteDataArray[0].bIntersecPosToNeg = (m1 < m2);
+
+							bNoIntersectionFor3AdjacentEdges = false;
+
+						}
+						else if (i == 3)
+						{
+							//Mark intersection occurred 
+							//adjacentEdgesCrossingOver[1].first = true;
+							//If intersection is from + to -ve, mark as true, else false
+							//adjacentEdgesCrossingOver[1].second = (m1 < m2);
+
+
+							edgeHermiteDataArray[1].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							edgeHermiteDataArray[1].normal = intersectionNormal;
+							edgeHermiteDataArray[1].position = currIntersectionPoint;
+							edgeHermiteDataArray[1].bIntersecPosToNeg = (m1 < m2);
+
+							bNoIntersectionFor3AdjacentEdges = false;
+
+						}
+						else if (i == 8)
+						{
+							//Mark intersection occurred 
+							//adjacentEdgesCrossingOver[2].first = true;
+							//If intersection is from + to -ve, mark as true, else false
+							//adjacentEdgesCrossingOver[2].second = (m1 < m2);
+
+
+							edgeHermiteDataArray[2].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							edgeHermiteDataArray[2].normal = intersectionNormal;
+							edgeHermiteDataArray[2].position = currIntersectionPoint;
+							edgeHermiteDataArray[2].bIntersecPosToNeg = (m1 < m2);
+
+							bNoIntersectionFor3AdjacentEdges = false;
+
+						}
+
 					}
 
-					
-					//Map voxel to adjacent edges vector
-					voxelEdgeIsoSurfaceMap[GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)] = adjacentEdgesCrossingOver;
+					//In the case there is an intersection for any of the 3 adjacent edges, map the voxel to the adjacent edges, else don't.
+					if (!bNoIntersectionFor3AdjacentEdges)
+					{
+						//Map voxel to adjacent edges hermite data array
+						voxelEdgesHermiteDataMap[GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)] = edgeHermiteDataArray;
+					}
 
 					glm::vec3 vertexPos(0.f);
 					for (const glm::vec3& pos : intersectionPoints)
@@ -415,14 +459,22 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 		{
 			for (int z = 0; z < this->m_gridDepth * m_voxelSize; z += m_voxelSize)
 			{
-				const std::array<std::pair<bool, bool>, 3> adjacentEdgesIntersection = voxelEdgeIsoSurfaceMap[
+				//Check if there is no mapping, then no intersections for that voxel's 3 adjacent edges. Skip.
+				if (voxelEdgesHermiteDataMap.find(GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)) == voxelEdgesHermiteDataMap.end())
+				{
+					continue;
+				}
+
+
+				const std::array<HermiteData, 3> adjacentEdgesIntersection = voxelEdgesHermiteDataMap[
 					GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)];
+
 
 				//Iterate over adjacent edges and make connections where possible
 				for (int axis = 0; axis < 3; ++axis)
 				{
 					//For an edge, check if an intersection exists and all 4 neighboring voxels are valid
-					if (adjacentEdgesIntersection[axis].first == true && ((x - 1) > 0 && (y - 1) > 0 && (z - 1) > 0))
+					if (adjacentEdgesIntersection[axis].distance != std::numeric_limits<float>::min() && ((x - 1) > 0 && (y - 1) > 0 && (z - 1) > 0))
 					{
 
 						std::vector<unsigned int> vertexIndices;
@@ -456,7 +508,7 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						{
 
 							//If the transition is from + to -ve 
-							if (adjacentEdgesIntersection[axis].second == true)
+							if (adjacentEdgesIntersection[axis].bIntersecPosToNeg == true)
 							{
 
 								//Triangle 1

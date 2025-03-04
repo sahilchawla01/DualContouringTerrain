@@ -6,11 +6,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-struct VertexHermiteData
+
+//Describes the data for a given intersection point
+struct HermiteData
 {
 	glm::vec3 position;
 	glm::vec3 normal;
-	float distance; 
+	float distance;
+	//Whether the intersection point is from positive to negative or vice versa (used for rendering order of triangles)
+	bool bIntersecPosToNeg;
 };
 
 
@@ -39,9 +43,7 @@ private:
 	int m_gridDepth = 15;
 	int m_voxelSize = 1;
 
-	std::unordered_map<int, std::array<std::pair<bool, bool>, 3>> voxelEdgeIsoSurfaceMap;
-	std::unordered_map<int, std::array<std::pair<float, float>, 3>> voxelEdgeSDFMap;
-
+	std::unordered_map<int, std::array<HermiteData, 3>> voxelEdgesHermiteDataMap;
 	std::unordered_map<int, int> voxelVertexIndexMap;
 
 	std::weak_ptr<Settings> settings;
