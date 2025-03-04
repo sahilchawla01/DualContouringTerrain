@@ -196,6 +196,7 @@
     <ClInclude Include="src\Helpers\imgui\imstb_textedit.h" />
     <ClInclude Include="src\Helpers\imgui\imstb_truetype.h" />
     <ClInclude Include="src\Helpers\imgui\imgui_stdlib.h" />
+    <ClInclude Include="src\Helpers\Math\QEFSolver.h" />
     <ClInclude Include="src\Helpers\Math\RNG.h" />
     <ClInclude Include="src\Helpers\Math\SDF.h" />
     <ClInclude Include="src\Helpers\Settings.h" />

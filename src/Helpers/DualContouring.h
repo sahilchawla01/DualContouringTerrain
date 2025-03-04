@@ -6,6 +6,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+struct VertexHermiteData
+{
+	glm::vec3 position;
+	glm::vec3 normal;
+	float distance; 
+};
+
+
 class ACamera;
 class Settings; 
 

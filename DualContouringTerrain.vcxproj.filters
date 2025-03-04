@@ -134,6 +134,9 @@
     <ClInclude Include="src\Helpers\Math\RNG.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Helpers\Math\QEFSolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Shaders\Test\test.vert" />
