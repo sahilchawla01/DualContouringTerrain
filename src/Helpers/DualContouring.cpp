@@ -7,6 +7,7 @@
 #include <Helpers/Settings.h>
 #include <Actors/ACamera.h>
 #include "Shader.h"
+#include "Math/QEFSolver.h"
 #include "Math/RNG.h"
 #include "Math/SDF.h"
 
@@ -299,7 +300,7 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 	*/
 					HermiteData defaultHermiteData { glm::vec3(0), glm::vec3(1, 0, 0), std::numeric_limits<float>::min(), false };
 
-					std::array<HermiteData, 3> edgeHermiteDataArray
+					std::array<HermiteData, 3> adjacentEdgeHermiteData
 					{
 						{
 							defaultHermiteData,
@@ -307,6 +308,8 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						    defaultHermiteData,
 						}
 					};
+
+					std::vector<HermiteData> allEdgeHermiteData; 
 
 					//If none of the 3 adjacent edges have an intersection, it is true.
 					bool bNoIntersectionFor3AdjacentEdges = true;
@@ -352,10 +355,10 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 							////If intersection is from + to -ve, mark as true, else false
 							//adjacentEdgesCrossingOver[0].second = (m1 < m2);
 
-							edgeHermiteDataArray[0].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
-							edgeHermiteDataArray[0].normal = intersectionNormal;
-							edgeHermiteDataArray[0].position = currIntersectionPoint;
-							edgeHermiteDataArray[0].bIntersecPosToNeg = (m1 < m2);
+							adjacentEdgeHermiteData[0].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							adjacentEdgeHermiteData[0].normal = intersectionNormal;
+							adjacentEdgeHermiteData[0].position = currIntersectionPoint;
+							adjacentEdgeHermiteData[0].bIntersecPosToNeg = (m1 < m2);
 
 							bNoIntersectionFor3AdjacentEdges = false;
 
@@ -368,10 +371,10 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 							//adjacentEdgesCrossingOver[1].second = (m1 < m2);
 
 
-							edgeHermiteDataArray[1].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
-							edgeHermiteDataArray[1].normal = intersectionNormal;
-							edgeHermiteDataArray[1].position = currIntersectionPoint;
-							edgeHermiteDataArray[1].bIntersecPosToNeg = (m1 < m2);
+							adjacentEdgeHermiteData[1].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							adjacentEdgeHermiteData[1].normal = intersectionNormal;
+							adjacentEdgeHermiteData[1].position = currIntersectionPoint;
+							adjacentEdgeHermiteData[1].bIntersecPosToNeg = (m1 < m2);
 
 							bNoIntersectionFor3AdjacentEdges = false;
 
@@ -384,32 +387,40 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 							//adjacentEdgesCrossingOver[2].second = (m1 < m2);
 
 
-							edgeHermiteDataArray[2].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
-							edgeHermiteDataArray[2].normal = intersectionNormal;
-							edgeHermiteDataArray[2].position = currIntersectionPoint;
-							edgeHermiteDataArray[2].bIntersecPosToNeg = (m1 < m2);
+							adjacentEdgeHermiteData[2].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							adjacentEdgeHermiteData[2].normal = intersectionNormal;
+							adjacentEdgeHermiteData[2].position = currIntersectionPoint;
+							adjacentEdgeHermiteData[2].bIntersecPosToNeg = (m1 < m2);
 
 							bNoIntersectionFor3AdjacentEdges = false;
 
 						}
 
+
+						//Store hermite info of an edge
+						allEdgeHermiteData.push_back(
+							{ currIntersectionPoint, intersectionNormal, SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f), (m1 < m2)
+							}
+						);
 					}
 
 					//In the case there is an intersection for any of the 3 adjacent edges, map the voxel to the adjacent edges, else don't.
 					if (!bNoIntersectionFor3AdjacentEdges)
 					{
 						//Map voxel to adjacent edges hermite data array
-						voxelEdgesHermiteDataMap[GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)] = edgeHermiteDataArray;
+						voxelEdgesHermiteDataMap[GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)] = adjacentEdgeHermiteData;
 					}
 
 					glm::vec3 vertexPos(0.f);
-					for (const glm::vec3& pos : intersectionPoints)
+					/*for (const glm::vec3& pos : intersectionPoints)
 					{
 						vertexPos += pos;
-					}
+					}*/
 
 					//Get centroid of intersection positions 
-					vertexPos = vertexPos / static_cast<float>(intersectionPoints.size());
+					//vertexPos = vertexPos / static_cast<float>(intersectionPoints.size());
+
+					vertexPos = QEFSolver::ComputeBestVertexPosition(allEdgeHermiteData);
 
 					//Calculate centroid of intersection normals
 					glm::vec3 vertexNormal(0.f);
