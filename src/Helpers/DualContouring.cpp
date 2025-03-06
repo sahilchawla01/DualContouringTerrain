@@ -420,6 +420,7 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 					//Get centroid of intersection positions 
 					//vertexPos = vertexPos / static_cast<float>(intersectionPoints.size());
 
+					//Calculate the best vertex using Quadratic error function
 					vertexPos = QEFSolver::ComputeBestVertexPosition(allEdgeHermiteData);
 
 					//Calculate centroid of intersection normals
@@ -430,8 +431,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 					}
 
 					vertexNormal = glm::normalize(vertexNormal);
-
-					//TODO: Perform QEF to find the vertex position, and then use normals, currently normals are unused
 
 					//SANITY CHECK: CHECK IF CURRENT UNIQUE ID HAS ALREADY BEEN SET FOR VOXEL-VERTEX MAP
 					if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)) != voxelVertexIndexMap.end())

@@ -25,10 +25,28 @@ public:
             ATb += n * d; // Accumulate A^T b
         }
 
+        // Check for rank deficiency
+        float determinant = glm::determinant(ATA);
+        if (glm::abs(determinant) < 1e-6f) { // Small determinant means nearly singular
+            std::cout << "Rank deficient case detected. Using centroid instead.\n";
+
+            glm::vec3 x(0.0);
+
+             //Get centroid of intersection positions 
+             for (const auto& data: hermiteDataPoints)
+	        	x += data.position;
+
+            x = x / static_cast<float>(hermiteDataPoints.size());
+            return x;
+        }
+
         // Solve the system A^T A * x = A^T b
         glm::vec3 x = glm::inverse(ATA) * ATb; // Solve for x using matrix inverse
 
         return x;
 
+
 	}
 };
+
+
