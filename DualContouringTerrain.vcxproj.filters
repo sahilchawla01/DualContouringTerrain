@@ -69,6 +69,9 @@
     <ClCompile Include="src\Helpers\Settings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Components\USDFComponent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application\app.h">
@@ -135,6 +138,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Helpers\Math\QEFSolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Components\USDFComponent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Helpers\SDFs\ISignedDistanceField.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Helpers\SDFs\SphereSDF.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Helpers\SDFs\BoxSDF.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

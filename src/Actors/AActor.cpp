@@ -3,6 +3,7 @@
 #include <Helpers/Shader.h>
 
 #include "Components/UMeshComponent.h"
+#include "Components/USDFComponent.h"
 
 AActor::AActor(const std::string& name, const std::weak_ptr<ACamera> currentCamera , const glm::vec3& model_position, const glm::vec3& model_scale)
 {
@@ -32,6 +33,11 @@ std::vector<float> AActor::GetVertices() const
 glm::mat4 AActor::GetModelMatrix() const
 {
 	return m_modelTransformMatrix;
+}
+
+std::weak_ptr<USDFComponent> AActor::GetSDFComponent() const
+{
+	return sdfComponent;
 }
 
 glm::mat4 AActor::GetMVPMatrix() const
@@ -93,4 +99,8 @@ void AActor::SetupMeshComponent(EShaderOption e_shaderOption, const std::vector<
 
 }
 
+void AActor::SetupSDFComponent()
+{
+	sdfComponent = std::make_shared<USDFComponent>(shared_from_this());
+}
 

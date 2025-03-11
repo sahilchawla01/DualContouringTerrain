@@ -7,6 +7,7 @@
 #include <Helpers/Settings.h>
 #include <Actors/ACamera.h>
 #include "Shader.h"
+#include "Components/USDFComponent.h"
 #include "Math/QEFSolver.h"
 #include "Math/RNG.h"
 #include "Math/SDF.h"
@@ -91,39 +92,49 @@ const glm::vec3 DualContouring::GetIntersectionPoint(const glm::vec3& firstPosit
 	glm::vec3 direction = glm::normalize(secondPosition - firstPosition);
 	const float step = 1 / static_cast<float>(totalSteps);
 
-	float minValue = 100000.f;
+	//float minValue = 100000.f;
 
 	float finalT = 0.f;
-	float currentT = 0.f;
+	//float currentT = 0.f;
 
-	while(currentT <= 1.f)
-	{
-		//TODO: Change it to a generic SDF function
-		const glm::vec3 currentPos = firstPosition + (direction * currentT);
-		const float density = SDF::GetSphereSDFValue(currentPos, spherePosition, sphereRadius);
+	//while(currentT <= 1.f)
+	//{
+	//	//TODO: Change it to a generic SDF function
+	//	const glm::vec3 currentPos = firstPosition + (direction * currentT);
+	//	const float density = SDF::GetSphereSDFValue(currentPos, spherePosition, sphereRadius);
 
-		if(density < minValue)
-		{
-			minValue = density;
-			finalT = currentT;
-		}
+	//	if(density < minValue)
+	//	{
+	//		minValue = density;
+	//		finalT = currentT;
+	//	}
 
-		currentT += step;
-	}
+	//	currentT += step;
+	//}
 
 	return firstPosition + (direction * finalT);
 	
 }
 
-const glm::vec3 DualContouring::CalculateSurfaceNormal(const glm::vec3& intersectionPos, const glm::vec3& spherePosition,
-	const float& sphereRadius)
+const glm::vec3 DualContouring::CalculateSurfaceNormal(const glm::vec3& intersectionPos, const std::weak_ptr<USDFComponent> actorSdfComponent)
 {
 	//Perform Finite Sum Difference
 	const float h = 0.001f;
 
-	const float dx = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(h, 0.f, 0.f), spherePosition, sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(h, 0.f, 0.f), spherePosition, sphereRadius);
-	const float dy = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(0.f, h, 0.f), spherePosition, sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(0.f, h, 0.f), spherePosition, sphereRadius);
-	const float dz = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(0.f, 0.f, h), spherePosition, sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(0.f, 0.f, h), spherePosition, sphereRadius);
+	//const float dx = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(h, 0.f, 0.f), spherePosition,/* sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(h, 0.f, 0.f), spherePosition, sphereRadius);
+	//const float dy = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(0.f, h, 0.f), spherePosition, sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(0.f, h, 0.f), spherePosition, sphereRadius);
+	//const float dz = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(0.f, 0.f, h), spherePosition, sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(0.f, 0.f, h), spherePosition, sphereRadius);*/
+
+
+	const float dx = 
+		actorSdfComponent.lock()->EvaluateSDF(intersectionPos + glm::vec3(h, 0.f, 0.f)) - 
+		actorSdfComponent.lock()->EvaluateSDF(intersectionPos - glm::vec3(h, 0.f, 0.f));
+	const float dy = 
+		actorSdfComponent.lock()->EvaluateSDF(intersectionPos + glm::vec3(0.f, h, 0.f)) - 
+		actorSdfComponent.lock()->EvaluateSDF(intersectionPos - glm::vec3(0.f, h, 0.f));
+	const float dz = 
+		actorSdfComponent.lock()->EvaluateSDF(intersectionPos + glm::vec3(0.f, 0.f, h)) - 
+		actorSdfComponent.lock()->EvaluateSDF(intersectionPos - glm::vec3(0.f, 0.f, h));
 
 	return glm::normalize(glm::vec3(dx, dy, dz));
 }
@@ -225,7 +236,7 @@ void DualContouring::DebugDrawVertices(const std::vector<float>& vertices, std::
 }
 
 void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<float>& normals,
-                                  std::vector<unsigned int>& indices, std::vector<float>& colors)
+                                  std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent)
 {
 	std::vector<glm::vec3> grid;
 	std::vector<float> modelVertices;
@@ -271,8 +282,14 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						//Get current position 
 						glm::vec3 currentCornerPos = (voxelCornerOffsets[i] * static_cast<float>(this->m_voxelSize)) + relativePos;
 
+						if (actorSdfComponent.expired())
+						{
+							std::cout << "\nError, ACTOR SDF COMPONENT EXPIRED";
+						}
+
 						//Calculate distance
-						float distanceValue = SDF::GetSphereSDFValue(currentCornerPos, gridPosition, 4.f);
+						//float distanceValue = SDF::GetSphereSDFValue(currentCornerPos, gridPosition, 4.f);
+						float distanceValue = actorSdfComponent.lock()->EvaluateSDF(currentCornerPos);
 						cornerSDFValues[i] = distanceValue;
 
 						//TODO: convert position from grid relative to SDF center relative
@@ -344,7 +361,8 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						//TODO: SAnity check whether point is within voxel
 
 						//Calculate normal using Finite Sum Difference
-						const glm::vec3 intersectionNormal = CalculateSurfaceNormal(currIntersectionPoint, gridPosition, 4.f);
+						//const glm::vec3 intersectionNormal = CalculateSurfaceNormal(currIntersectionPoint, gridPosition, 4.f);
+						const glm::vec3 intersectionNormal = CalculateSurfaceNormal(currIntersectionPoint, actorSdfComponent);
 						intersectionNormals.push_back(intersectionNormal);
 
 						//Crossing over has occured, check if edge is one of the 3 adjacent left most corner ones, and set the value.
@@ -355,7 +373,9 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 							////If intersection is from + to -ve, mark as true, else false
 							//adjacentEdgesCrossingOver[0].second = (m1 < m2);
 
-							adjacentEdgeHermiteData[0].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							//adjacentEdgeHermiteData[0].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+
+							adjacentEdgeHermiteData[0].distance = actorSdfComponent.lock()->EvaluateSDF(currIntersectionPoint);
 							adjacentEdgeHermiteData[0].normal = intersectionNormal;
 							adjacentEdgeHermiteData[0].position = currIntersectionPoint;
 							adjacentEdgeHermiteData[0].bIntersecPosToNeg = (m1 < m2);
@@ -371,7 +391,8 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 							//adjacentEdgesCrossingOver[1].second = (m1 < m2);
 
 
-							adjacentEdgeHermiteData[1].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							//adjacentEdgeHermiteData[1].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							adjacentEdgeHermiteData[1].distance = actorSdfComponent.lock()->EvaluateSDF(currIntersectionPoint);
 							adjacentEdgeHermiteData[1].normal = intersectionNormal;
 							adjacentEdgeHermiteData[1].position = currIntersectionPoint;
 							adjacentEdgeHermiteData[1].bIntersecPosToNeg = (m1 < m2);
@@ -387,7 +408,8 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 							//adjacentEdgesCrossingOver[2].second = (m1 < m2);
 
 
-							adjacentEdgeHermiteData[2].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							//adjacentEdgeHermiteData[2].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
+							adjacentEdgeHermiteData[2].distance = actorSdfComponent.lock()->EvaluateSDF(currIntersectionPoint);
 							adjacentEdgeHermiteData[2].normal = intersectionNormal;
 							adjacentEdgeHermiteData[2].position = currIntersectionPoint;
 							adjacentEdgeHermiteData[2].bIntersecPosToNeg = (m1 < m2);
@@ -398,10 +420,16 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 
 
 						//Store hermite info of an edge
-						allEdgeHermiteData.push_back(
+						/*allEdgeHermiteData.push_back(
 							{ currIntersectionPoint, intersectionNormal, SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f), (m1 < m2)
 							}
+						);*/
+
+						allEdgeHermiteData.push_back(
+							{ currIntersectionPoint, intersectionNormal, actorSdfComponent.lock()->EvaluateSDF(currIntersectionPoint), (m1 < m2)
+							}
 						);
+
 					}
 
 					//In the case there is an intersection for any of the 3 adjacent edges, map the voxel to the adjacent edges, else don't.

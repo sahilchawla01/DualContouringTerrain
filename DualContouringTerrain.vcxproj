@@ -165,6 +165,7 @@
     <ClCompile Include="src\Application\glad.c" />
     <ClCompile Include="src\Components\UActorComponent.cpp" />
     <ClCompile Include="src\Components\UMeshComponent.cpp" />
+    <ClCompile Include="src\Components\USDFComponent.cpp" />
     <ClCompile Include="src\Helpers\DualContouring.cpp" />
     <ClCompile Include="src\Helpers\imgui\imgui_impl_glfw.cpp" />
     <ClCompile Include="src\Helpers\imgui\imgui_impl_opengl3.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="src\Application\app.h" />
     <ClInclude Include="src\Components\UActorComponent.h" />
     <ClInclude Include="src\Components\UMeshComponent.h" />
+    <ClInclude Include="src\Components\USDFComponent.h" />
     <ClInclude Include="src\Enums\EShaderOption.h" />
     <ClInclude Include="src\Helpers\DualContouring.h" />
     <ClInclude Include="src\Helpers\imgui\imgui_impl_glfw.h" />
@@ -199,6 +201,9 @@
     <ClInclude Include="src\Helpers\Math\QEFSolver.h" />
     <ClInclude Include="src\Helpers\Math\RNG.h" />
     <ClInclude Include="src\Helpers\Math\SDF.h" />
+    <ClInclude Include="src\Helpers\SDFs\BoxSDF.h" />
+    <ClInclude Include="src\Helpers\SDFs\ISignedDistanceField.h" />
+    <ClInclude Include="src\Helpers\SDFs\SphereSDF.h" />
     <ClInclude Include="src\Helpers\Settings.h" />
     <ClInclude Include="src\Helpers\Shader.h" />
   </ItemGroup>

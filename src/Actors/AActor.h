@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+class USDFComponent;
 enum class EShaderOption;
 class Shader;
 class ACamera;
@@ -25,8 +26,14 @@ public:
 	std::vector<float> GetVertices() const;
 	glm::mat4 GetModelMatrix() const;
 
+	//COMPONENT GETTERS
+	std::weak_ptr<USDFComponent> GetSDFComponent() const;
+
 	//Creates and sets shaders, and buffers for mesh component
 	void SetupMeshComponent(EShaderOption e_shaderOption, const std::vector<float>& model_vertices, const std::vector<float>& model_normals, const std::vector<unsigned int>& model_indices, const std::vector<float>& model_colors = std::vector<float>{});
+	//Add the SDF component 
+	void SetupSDFComponent();
+
 	virtual void Render();
 
 private:
@@ -42,6 +49,7 @@ protected:
 
 	//COMPONENTS
 	std::shared_ptr<UMeshComponent> meshComponent;
+	std::shared_ptr<USDFComponent> sdfComponent;
 
 
 protected:

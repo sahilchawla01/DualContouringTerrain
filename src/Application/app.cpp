@@ -17,10 +17,13 @@
 //IMGUI INCLUDES
 
 #include "Actors/AActor.h"
+#include "Components/USDFComponent.h"
 #include "Enums/EShaderOption.h"
 #include "Helpers/imgui/imgui.h"
 #include "Helpers/imgui/imgui_impl_glfw.h"
 #include "Helpers/imgui/imgui_impl_opengl3.h"
+#include "Helpers/SDFs/BoxSDF.h"
+#include "Helpers/SDFs/SphereSDF.h"
 
 App::App(int windowWidth, int windowHeight)
 {
@@ -93,17 +96,28 @@ void App::init()
 	ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
 	ImGui_ImplOpenGL3_Init();
 
+	//Create Sphere Actor
+	std::shared_ptr<AActor> terrainActor = std::make_shared<AActor>("Terrain", m_currentCamera);
+	terrainActor->SetupSDFComponent();
+
+	//Attach the sdf component and add relevant sdfs within it
+	const std::weak_ptr<USDFComponent> terrainSDFComponent = terrainActor->GetSDFComponent();
+	if (!terrainSDFComponent.expired())
+	{
+		terrainSDFComponent.lock()->AddSDF<BoxSDF>(glm::vec3(0.1f, -0.2f, -0.05), glm::vec3(0.7f));
+		terrainSDFComponent.lock()->AddSDF<SphereSDF>(glm::vec3(-3.0f), 2.0f);
+	}
 
 	// Setup Grid
 	std::vector<float> terrainVertices, terrainNormals, terrainDebugColors;
 	std::vector<unsigned int> terrainIndices;
 
 	DualContouring dualContouring(15, 15, 15, 1);
-	dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+	dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent);
 
-	//Create Sphere Actor
-	std::shared_ptr<AActor> sphereSDFActor = std::make_shared<AActor>("TestSphere", m_currentCamera);
-	sphereSDFActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ?  EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+	//Setup the mesh component after generating the mesh
+	terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ?  EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+
 
 	//Render frames
 	while(!glfwWindowShouldClose(window))
@@ -147,9 +161,10 @@ void App::init()
 		//~~ Handle Rendering ~~
 
 		//Render the SDF sphere
-		sphereSDFActor->Render();
+		terrainActor->Render();
+
 		//Render dual contouring vertices
-		dualContouring.DebugDrawVertices(sphereSDFActor->GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));
+		dualContouring.DebugDrawVertices(terrainActor->GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));
 
 		//Render the UI
 		ImGui::Render();
