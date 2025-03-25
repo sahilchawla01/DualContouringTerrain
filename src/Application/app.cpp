@@ -152,10 +152,30 @@ void App::init()
 			{
 				if (!terrainSDFComponent.expired())
 				{
+					bool bSDFChanged = false;
+
 					std::vector<std::shared_ptr<ISignedDistanceField>> sdfList = terrainSDFComponent.lock()->GetSDFList();
 
-					for(const std::shared_ptr<ISignedDistanceField> sdfElement : sdfList)
+					//Lambda function that returns an Input::Float and sets the sdf changed flag if any change occurs
+					auto SDFInputVector3WithCallback = [](const char* label, float* v, float v_step, float v_speedStep, const char* format, bool& bSDFChanged)
+						{
+							float original_value = *v;
+
+							if (ImGui::InputFloat(label, v, v_step, v_speedStep, format)) {
+								if (*v != original_value) {
+
+									//If SDF value has changed, set flag 
+									bSDFChanged = true;
+									return true;
+								}
+							}
+							return false;
+						};
+
+					for(size_t sdfIndex = 0; sdfIndex < sdfList.size(); ++sdfIndex)
 					{
+						const std::shared_ptr<ISignedDistanceField> sdfElement = sdfList[sdfIndex];
+
 						switch (sdfElement->GetType())
 						{
 							case SDFType::Box:
@@ -164,16 +184,20 @@ void App::init()
 								ImGui::Spacing();
 
 								std::shared_ptr<BoxSDF> boxSDF = std::dynamic_pointer_cast<BoxSDF>(sdfElement);
-								ImGui::InputFloat("X", &boxSDF->center.x, 0.01f, 1.0f, "%.3f");
-								ImGui::InputFloat("Y", &boxSDF->center.y, 0.01f, 1.0f, "%.3f");
-								ImGui::InputFloat("Z", &boxSDF->center.z, 0.01f, 1.0f, "%.3f");
+
+								//IMPORTANT: The complement strings are something needed for ImGUI to have UNIQUE IDs for components as I create them in a for loop
+								std::string centerComplement = "##center" + std::to_string(sdfIndex);
+;								SDFInputVector3WithCallback(("X"+centerComplement).c_str(), &boxSDF->center.x, 0.01f, 1.0f, "%.3f", bSDFChanged);
+								SDFInputVector3WithCallback(("Y" + centerComplement).c_str(), &boxSDF->center.y, 0.01f, 1.0f, "%.3f", bSDFChanged);
+								SDFInputVector3WithCallback(("Z" + centerComplement).c_str(), &boxSDF->center.z, 0.01f, 1.0f, "%.3f", bSDFChanged);
 
 								ImGui::Text("Half-Extents:");
 								ImGui::Spacing();
 
-								ImGui::InputFloat("X", &boxSDF->halfExtents.x, 0.01f, 1.0f, "%.3f");
-								ImGui::InputFloat("Y", &boxSDF->halfExtents.y, 0.01f, 1.0f, "%.3f");
-								ImGui::InputFloat("Z", &boxSDF->halfExtents.z, 0.01f, 1.0f, "%.3f");
+								std::string halfExtentComplement = "##halfExtent" + std::to_string(sdfIndex);
+								SDFInputVector3WithCallback(("X" + halfExtentComplement).c_str(), &boxSDF->halfExtents.x, 0.01f, 1.0f, "%.3f", bSDFChanged);
+								SDFInputVector3WithCallback(("Y" + halfExtentComplement).c_str(), &boxSDF->halfExtents.y, 0.01f, 1.0f, "%.3f", bSDFChanged);
+								SDFInputVector3WithCallback(("Z" + halfExtentComplement).c_str(), &boxSDF->halfExtents.z, 0.01f, 1.0f, "%.3f", bSDFChanged);
 
 								break;
 							}
@@ -183,12 +207,12 @@ void App::init()
 								ImGui::Spacing();
 
 								std::shared_ptr<SphereSDF> sphereSDF = std::dynamic_pointer_cast<SphereSDF>(sdfElement);
-								ImGui::InputFloat("X", &sphereSDF->center.x, 0.01f, 1.0f, "%.3f");
-								ImGui::InputFloat("Y", &sphereSDF->center.y, 0.01f, 1.0f, "%.3f");
-								ImGui::InputFloat("Z", &sphereSDF->center.z, 0.01f, 1.0f, "%.3f");
+								std::string centerComplement = "##s_center" + std::to_string(sdfIndex);								SDFInputVector3WithCallback(("X" + centerComplement).c_str(), &sphereSDF->center.x, 0.01f, 1.0f, "%.3f", bSDFChanged);
+								SDFInputVector3WithCallback(("Y" + centerComplement).c_str(), &sphereSDF->center.y, 0.01f, 1.0f, "%.3f", bSDFChanged);
+								SDFInputVector3WithCallback(("Z" + centerComplement).c_str(), &sphereSDF->center.z, 0.01f, 1.0f, "%.3f", bSDFChanged);
 
 								ImGui::Spacing();
-								ImGui::InputFloat("Sphere Radius", &sphereSDF->radius, 0.01f, 1.0f, "%.3f");
+								SDFInputVector3WithCallback("Sphere Radius", &sphereSDF->radius, 0.01f, 1.0f, "%.3f", bSDFChanged);
 
 								break;
 							}
@@ -198,12 +222,13 @@ void App::init()
 							}
 						}
 					}
+
+					//If SDF changed at any value, set flag to regenerate mesh
+					if (bSDFChanged) terrainSDFComponent.lock()->SetShouldRegenerateMesh(true);
 				}
 
 			}
-			//ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 
-			//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 			ImGui::End();
 			
 		}
