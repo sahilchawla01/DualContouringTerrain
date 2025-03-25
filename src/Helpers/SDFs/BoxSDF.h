@@ -14,4 +14,7 @@ public:
         glm::vec3 q = glm::abs(queryPoint - center) - halfExtents;
         return glm::length(glm::max(q, glm::vec3(0.0f))) + glm::min(glm::max(q.x, glm::max(q.y, q.z)), 0.0f);
     }
+
+    SDFType GetType() const override { return SDFType::Box; }
+
 };

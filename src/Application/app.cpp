@@ -108,15 +108,11 @@ void App::init()
 		terrainSDFComponent.lock()->AddSDF<SphereSDF>(glm::vec3(-3.0f), 2.0f);
 	}
 
-	// Setup Grid
+	// Setup dual contouring grid
 	std::vector<float> terrainVertices, terrainNormals, terrainDebugColors;
 	std::vector<unsigned int> terrainIndices;
 
 	DualContouring dualContouring(15, 15, 15, 1);
-	dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent);
-
-	//Setup the mesh component after generating the mesh
-	terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ?  EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
 
 
 	//Render frames
@@ -142,7 +138,7 @@ void App::init()
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
-			ImGui::Begin("Dual Contouring Settings!");                        
+			ImGui::Begin("Dual Contouring Settings");                        
 
 			ImGui::Checkbox("Enable Cursor", &settings.bIsCursorEnabled);      // Edit bools storing our window open/close state
 			if (ImGui::CollapsingHeader("Debug"))
@@ -150,6 +146,60 @@ void App::init()
 				ImGui::Checkbox("Enable Debug", &settings.bIsDebugEnabled);
 				ImGui::Checkbox("Enable Voxel Debug", &settings.bIsVoxelDebugEnabled);
 				ImGui::Checkbox("Enable SDF Mesh Rendering", &settings.bViewMesh);
+			}
+
+			if (ImGui::CollapsingHeader("Terrain SDFs"))
+			{
+				if (!terrainSDFComponent.expired())
+				{
+					std::vector<std::shared_ptr<ISignedDistanceField>> sdfList = terrainSDFComponent.lock()->GetSDFList();
+
+					for(const std::shared_ptr<ISignedDistanceField> sdfElement : sdfList)
+					{
+						switch (sdfElement->GetType())
+						{
+							case SDFType::Box:
+							{
+								ImGui::Text("Box Center:");
+								ImGui::Spacing();
+
+								std::shared_ptr<BoxSDF> boxSDF = std::dynamic_pointer_cast<BoxSDF>(sdfElement);
+								ImGui::InputFloat("X", &boxSDF->center.x, 0.01f, 1.0f, "%.3f");
+								ImGui::InputFloat("Y", &boxSDF->center.y, 0.01f, 1.0f, "%.3f");
+								ImGui::InputFloat("Z", &boxSDF->center.z, 0.01f, 1.0f, "%.3f");
+
+								ImGui::Text("Half-Extents:");
+								ImGui::Spacing();
+
+								ImGui::InputFloat("X", &boxSDF->halfExtents.x, 0.01f, 1.0f, "%.3f");
+								ImGui::InputFloat("Y", &boxSDF->halfExtents.y, 0.01f, 1.0f, "%.3f");
+								ImGui::InputFloat("Z", &boxSDF->halfExtents.z, 0.01f, 1.0f, "%.3f");
+
+								break;
+							}
+							case SDFType::Sphere:
+							{
+								ImGui::Text("Sphere Center");
+								ImGui::Spacing();
+
+								std::shared_ptr<SphereSDF> sphereSDF = std::dynamic_pointer_cast<SphereSDF>(sdfElement);
+								ImGui::InputFloat("X", &sphereSDF->center.x, 0.01f, 1.0f, "%.3f");
+								ImGui::InputFloat("Y", &sphereSDF->center.y, 0.01f, 1.0f, "%.3f");
+								ImGui::InputFloat("Z", &sphereSDF->center.z, 0.01f, 1.0f, "%.3f");
+
+								ImGui::Spacing();
+								ImGui::InputFloat("Sphere Radius", &sphereSDF->radius, 0.01f, 1.0f, "%.3f");
+
+								break;
+							}
+							default:
+							{
+									
+							}
+						}
+					}
+				}
+
 			}
 			//ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 
@@ -161,7 +211,23 @@ void App::init()
 		//~~ Handle Rendering ~~
 
 		//Render the SDF sphere
-		terrainActor->Render();
+		{
+			//If any changes occur in the SDF, regenerate the mesh
+			if (!terrainSDFComponent.expired() && terrainSDFComponent.lock()->GetShouldRegenerateMesh())
+			{
+				dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent);
+
+				//Set up the mesh component after generating the mesh
+				terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+
+				//Unset flag to regenerate mesh
+				terrainSDFComponent.lock()->SetShouldRegenerateMesh(false);
+			}
+
+			//Actually render the terrain mesh
+			terrainActor->Render();
+			
+		}
 
 		//Render dual contouring vertices
 		dualContouring.DebugDrawVertices(terrainActor->GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));

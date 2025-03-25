@@ -14,4 +14,7 @@ public:
     {
         return glm::length(queryPoint - center) - radius;
     }
+
+    SDFType GetType() const override { return SDFType::Sphere; }
+
 };

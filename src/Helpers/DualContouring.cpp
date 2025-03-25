@@ -238,6 +238,10 @@ void DualContouring::DebugDrawVertices(const std::vector<float>& vertices, std::
 void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<float>& normals,
                                   std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent)
 {
+	//Clear any index mapping data before generating mesh in case already generated the mesh
+	ClearHashMapData();
+
+
 	std::vector<glm::vec3> grid;
 	std::vector<float> modelVertices;
 	std::vector<float> modelNormals;
@@ -833,4 +837,10 @@ int DualContouring::GetUniqueIndexForGrid(const int x, const int y, const int z,
 	const int gridHeight)
 {
 	return x + gridWidth * (y + gridHeight * z);
+}
+
+void DualContouring::ClearHashMapData()
+{
+	voxelVertexIndexMap.clear();
+	voxelEdgesHermiteDataMap.clear();
 }

@@ -18,7 +18,10 @@ public:
 	template<typename T, typename... Args>
 	void AddSDF(Args&&... args)
 	{
-		sdfList.push_back(std::make_unique<T>(std::forward<Args>(args)...));
+		//Set flag to regenerate the mesh
+		bShouldRegenerateMesh = true;
+
+		sdfList.push_back(std::make_shared<T>(std::forward<Args>(args)...));
 
 		std::cout << "\nAdded an SDF to the list";
 	}
@@ -41,11 +44,18 @@ public:
 		return result;
 	}
 
+	std::vector<std::shared_ptr<ISignedDistanceField>> GetSDFList() { return sdfList; }
+
+	bool GetShouldRegenerateMesh() const { return bShouldRegenerateMesh; }
+	void SetShouldRegenerateMesh(bool bRegenerate) { bShouldRegenerateMesh = bRegenerate; }
+	
 
 
 private:
 
+	bool bShouldRegenerateMesh = true;
+
 	//Stores all the sdf objects
-	std::vector<std::unique_ptr<ISignedDistanceField>> sdfList;
+	std::vector<std::shared_ptr<ISignedDistanceField>> sdfList;
 
 };

@@ -52,5 +52,6 @@ private:
 
 private:
 	static int GetUniqueIndexForGrid(const int x, const int y, const int z, const int gridWidth, const int gridHeight);
+	void ClearHashMapData();
 
 };

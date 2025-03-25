@@ -53,6 +53,13 @@ void UMeshComponent::Render()
 
 void UMeshComponent::SetupBuffers()
 {
+	//Delete buffers in-case already setup
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &vertices_VBO);
+	glDeleteBuffers(1, &normal_VBO);
+	glDeleteBuffers(1, &colors_VBO);
+
+
 	bool bShouldSetupEBO = !(this->indices.empty());
 	bool bShouldBindNormals = !(this->normals.empty());
 	bool bShouldBindColors = !(this->colors.empty());
