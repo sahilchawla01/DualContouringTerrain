@@ -104,8 +104,8 @@ void App::init()
 	const std::weak_ptr<USDFComponent> terrainSDFComponent = terrainActor->GetSDFComponent();
 	if (!terrainSDFComponent.expired())
 	{
-		terrainSDFComponent.lock()->AddSDF<BoxSDF>(glm::vec3(-3.2f, 4.8f, -3.2f), glm::vec3(1.0f));
-		terrainSDFComponent.lock()->AddSDF<SphereSDF>(glm::vec3(0.12f), 3.0f);
+		//terrainSDFComponent.lock()->AddSDF<BoxSDF>(glm::vec3(-3.2f, 4.8f, -3.2f), glm::vec3(1.0f));
+		terrainSDFComponent.lock()->AddSDF<SphereSDF>(glm::vec3(0), 3.0f);
 	}
 
 	// Setup dual contouring grid
@@ -114,7 +114,7 @@ void App::init()
 
 	const int gridSize = 15;
 
-	DualContouring dualContouring(gridSize, gridSize, gridSize, 1.0);
+	DualContouring dualContouring(gridSize, gridSize, gridSize, 0.5f);
 
 
 	//Render frames

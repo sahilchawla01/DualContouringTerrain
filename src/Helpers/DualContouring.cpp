@@ -80,14 +80,10 @@ const std::vector<std::vector<glm::vec3>> DualContouring::adjacentVoxelsOffsets 
 	//Front most left vertical edge adjacent voxels
  {
 		glm::vec3(-1.f, 0.f, -1.f),
-	//Left-Bottom most edge adjacent voxels
 		glm::vec3(-1.f, 0.f, 0.f),
 		glm::vec3(0.f, 0.f, -1.f),
 		glm::vec3(0.f, 0.f, 0.f),
 	}
-	   glm::vec3(0.f, 0.f, -1.f),
-	   glm::vec3(0.f, 0.f, 0.f),
-   }
 };
 
 
@@ -129,9 +125,10 @@ const glm::vec3 DualContouring::CalculateSurfaceNormal(const glm::vec3& intersec
 	//const float dz = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(0.f, 0.f, h), spherePosition, sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(0.f, 0.f, h), spherePosition, sphereRadius);*/
 
 
-	const float dx = 
+
+	const float dx =
+		actorSdfComponent.lock()->EvaluateSDF(intersectionPos + glm::vec3(h, 0.f, 0.f)) -
 		actorSdfComponent.lock()->EvaluateSDF(intersectionPos - glm::vec3(h, 0.f, 0.f));
-	const float dy = 
 	const float dy =
 		actorSdfComponent.lock()->EvaluateSDF(intersectionPos + glm::vec3(0.f, h, 0.f)) -
 		actorSdfComponent.lock()->EvaluateSDF(intersectionPos - glm::vec3(0.f, h, 0.f));
