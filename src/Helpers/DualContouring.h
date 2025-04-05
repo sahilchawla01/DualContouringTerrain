@@ -26,7 +26,7 @@ class Settings;
 class DualContouring
 {
 public:
-	DualContouring(const unsigned int& gridWidth, const unsigned int& gridHeight, const unsigned int& gridDepth, const unsigned int& voxelSize);
+	DualContouring(const unsigned int& gridWidth, const unsigned int& gridHeight, const unsigned int& gridDepth, const float& voxelSize);
 	~DualContouring();
 
 	static const std::vector<glm::vec3> voxelCornerOffsets;
@@ -36,16 +36,21 @@ public:
 	static const glm::vec3 GetIntersectionPoint(const glm::vec3& firstPosition, const glm::vec3& secondPosition, const glm::vec3& spherePosition, const float& sphereRadius, int totalSteps = 100);
 	static const glm::vec3 CalculateSurfaceNormal(const glm::vec3& intersectionPos, std::weak_ptr<USDFComponent> actorSdfComponent);
 
-	void GenerateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent);
+	//Generates mesh initially
+	void InitGenerateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent);
+	//Updates mesh depending on any edits made to the SDF using user-inputs
+	void RegenerateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices, std::vector<float>& colors);
 	void DebugDrawVertices(const std::vector<float>& vertices,  std::weak_ptr<ACamera> curCamera, std::weak_ptr<Settings> settings);
+
+	//Maps a voxel (unique index from x,y,z pos) to 3 front-most adjacent edge's hermite data
+	std::unordered_map<int, std::array<HermiteData, 3>> voxelToEdgesHermiteDataMap;
 
 private:
 	int m_gridWidth = 15;
 	int m_gridHeight = 15;
 	int m_gridDepth = 15;
-	int m_voxelSize = 1;
+	float m_voxelResolution = 1.0f;
 
-	std::unordered_map<int, std::array<HermiteData, 3>> voxelEdgesHermiteDataMap;
 	std::unordered_map<int, int> voxelVertexIndexMap;
 
 	std::weak_ptr<Settings> settings;

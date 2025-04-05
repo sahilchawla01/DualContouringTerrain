@@ -104,15 +104,17 @@ void App::init()
 	const std::weak_ptr<USDFComponent> terrainSDFComponent = terrainActor->GetSDFComponent();
 	if (!terrainSDFComponent.expired())
 	{
-		terrainSDFComponent.lock()->AddSDF<BoxSDF>(glm::vec3(0.1f, -0.2f, -0.05), glm::vec3(0.7f));
-		terrainSDFComponent.lock()->AddSDF<SphereSDF>(glm::vec3(-3.0f), 2.0f);
+		terrainSDFComponent.lock()->AddSDF<BoxSDF>(glm::vec3(-3.2f, 4.8f, -3.2f), glm::vec3(1.0f));
+		terrainSDFComponent.lock()->AddSDF<SphereSDF>(glm::vec3(0.12f), 3.0f);
 	}
 
 	// Setup dual contouring grid
 	std::vector<float> terrainVertices, terrainNormals, terrainDebugColors;
 	std::vector<unsigned int> terrainIndices;
 
-	DualContouring dualContouring(15, 15, 15, 1);
+	const int gridSize = 15;
+
+	DualContouring dualContouring(gridSize, gridSize, gridSize, 1.0);
 
 
 	//Render frames
@@ -132,7 +134,7 @@ void App::init()
 		ProcessInput(window);
 		PollSettings(window);
 
-		// Start the Dear ImGui frame
+		// IMGUI Frame
 		{
 
 			ImGui_ImplOpenGL3_NewFrame();
@@ -240,7 +242,8 @@ void App::init()
 			//If any changes occur in the SDF, regenerate the mesh
 			if (!terrainSDFComponent.expired() && terrainSDFComponent.lock()->GetShouldRegenerateMesh())
 			{
-				dualContouring.GenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent);
+				//Generate the mesh based on the new SDF
+				dualContouring.InitGenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent);
 
 				//Set up the mesh component after generating the mesh
 				terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);

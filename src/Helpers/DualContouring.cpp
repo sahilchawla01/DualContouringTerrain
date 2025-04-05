@@ -14,12 +14,12 @@
 
 
 DualContouring::DualContouring(const unsigned int& gridWidth, const unsigned int& gridHeight,
-	const unsigned int& gridDepth, const unsigned int& voxelSize)
+	const unsigned int& gridDepth, const float& voxelSize)
 {
 	this->m_gridWidth = gridWidth;
-	this->m_gridHeight = gridHeight;
+	this->m_gridHeight= gridHeight;
 	this->m_gridDepth = gridDepth;
-	this->m_voxelSize = voxelSize;
+	this->m_voxelResolution = voxelSize;
 }
 
 DualContouring::~DualContouring()
@@ -80,10 +80,14 @@ const std::vector<std::vector<glm::vec3>> DualContouring::adjacentVoxelsOffsets 
 	//Front most left vertical edge adjacent voxels
  {
 		glm::vec3(-1.f, 0.f, -1.f),
+	//Left-Bottom most edge adjacent voxels
 		glm::vec3(-1.f, 0.f, 0.f),
 		glm::vec3(0.f, 0.f, -1.f),
 		glm::vec3(0.f, 0.f, 0.f),
 	}
+	   glm::vec3(0.f, 0.f, -1.f),
+	   glm::vec3(0.f, 0.f, 0.f),
+   }
 };
 
 
@@ -113,7 +117,7 @@ const glm::vec3 DualContouring::GetIntersectionPoint(const glm::vec3& firstPosit
 	//}
 
 	return firstPosition + (direction * finalT);
-	
+
 }
 
 const glm::vec3 DualContouring::CalculateSurfaceNormal(const glm::vec3& intersectionPos, const std::weak_ptr<USDFComponent> actorSdfComponent)
@@ -122,18 +126,17 @@ const glm::vec3 DualContouring::CalculateSurfaceNormal(const glm::vec3& intersec
 	const float h = 0.001f;
 
 	//const float dx = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(h, 0.f, 0.f), spherePosition,/* sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(h, 0.f, 0.f), spherePosition, sphereRadius);
-	//const float dy = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(0.f, h, 0.f), spherePosition, sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(0.f, h, 0.f), spherePosition, sphereRadius);
 	//const float dz = SDF::GetSphereSDFValue(intersectionPos + glm::vec3(0.f, 0.f, h), spherePosition, sphereRadius) - SDF::GetSphereSDFValue(intersectionPos - glm::vec3(0.f, 0.f, h), spherePosition, sphereRadius);*/
 
 
 	const float dx = 
-		actorSdfComponent.lock()->EvaluateSDF(intersectionPos + glm::vec3(h, 0.f, 0.f)) - 
 		actorSdfComponent.lock()->EvaluateSDF(intersectionPos - glm::vec3(h, 0.f, 0.f));
 	const float dy = 
-		actorSdfComponent.lock()->EvaluateSDF(intersectionPos + glm::vec3(0.f, h, 0.f)) - 
+	const float dy =
+		actorSdfComponent.lock()->EvaluateSDF(intersectionPos + glm::vec3(0.f, h, 0.f)) -
 		actorSdfComponent.lock()->EvaluateSDF(intersectionPos - glm::vec3(0.f, h, 0.f));
-	const float dz = 
-		actorSdfComponent.lock()->EvaluateSDF(intersectionPos + glm::vec3(0.f, 0.f, h)) - 
+	const float dz =
+		actorSdfComponent.lock()->EvaluateSDF(intersectionPos + glm::vec3(0.f, 0.f, h)) -
 		actorSdfComponent.lock()->EvaluateSDF(intersectionPos - glm::vec3(0.f, 0.f, h));
 
 	return glm::normalize(glm::vec3(dx, dy, dz));
@@ -235,14 +238,13 @@ void DualContouring::DebugDrawVertices(const std::vector<float>& vertices, std::
 	}
 }
 
-void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<float>& normals,
-                                  std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent)
+void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<float>& normals,
+	std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent)
 {
 	//Clear any index mapping data before generating mesh in case already generated the mesh
 	ClearHashMapData();
 
 
-	std::vector<glm::vec3> grid;
 	std::vector<float> modelVertices;
 	std::vector<float> modelNormals;
 	std::vector<unsigned int> modelIndices;
@@ -251,29 +253,33 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 	std::vector<float> modelDuplicateVertices;
 	std::vector<float> modelDuplicateNormals;
 
-	grid.reserve(this->m_gridWidth * this->m_gridHeight * this->m_gridDepth);
+	int expandedGridWidth = static_cast<int>(static_cast<float>(this->m_gridWidth) * (1 / this->m_voxelResolution));
+	int expandedGridHeight = static_cast<int>(static_cast<float>(this->m_gridHeight) * (1 / this->m_voxelResolution));
+	int expandedGridDepth = static_cast<int>(static_cast<float>(this->m_gridDepth) * (1 / this->m_voxelResolution));
+
 
 	glm::vec3 gridPosition(0.f, 0.f, 0.f);
 
 	glm::mat4 gridModelMatrix(1.f);
 	gridModelMatrix = glm::translate(gridModelMatrix, gridPosition);
 
-	glm::vec3 gridCenter((this->m_gridWidth * this->m_voxelSize) / 2, (this->m_gridHeight * this->m_voxelSize) / 2, (this->m_gridDepth * this->m_voxelSize) / 2);
+	glm::vec3 gridCenter((this->m_gridWidth) / 2, (this->m_gridHeight) / 2, (this->m_gridDepth) / 2);
 
 	//Generate vertex positions
-	for (int x = 0; x < this->m_gridWidth * this->m_voxelSize; x += this->m_voxelSize)
+	for (int x = 0; x < expandedGridWidth; x++)
 	{
-		for (int y = 0; y < this->m_gridHeight * this->m_voxelSize; y += this->m_voxelSize)
+		for (int y = 0; y < expandedGridHeight; y++)
 		{
-			for (int z = 0; z < this->m_gridDepth * this->m_voxelSize; z += this->m_voxelSize)
+			for (int z = 0; z < expandedGridDepth; z++)
 			{
 				//Get relative position to grid position
-				glm::vec3 relativePos(static_cast<float>(x) - gridCenter.x, static_cast<float>(y) - gridCenter.y, static_cast<float>(z) - gridCenter.z);
+				glm::vec3 relativePos((static_cast<float>(x) * this->m_voxelResolution), (static_cast<float>(y) * this->m_voxelResolution), (static_cast<float>(z) * this->m_voxelResolution));
 
+				//Relative to grid center
+				relativePos -= gridCenter;
+
+				//Relative to grid position
 				relativePos += gridPosition;
-
-				//Push position to grid
-				grid.emplace_back(relativePos);
 
 				//Go over each corner
 
@@ -283,16 +289,15 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 
 					for (int i = 0; i < 8; ++i)
 					{
-						//Get current position 
-						glm::vec3 currentCornerPos = (voxelCornerOffsets[i] * static_cast<float>(this->m_voxelSize)) + relativePos;
+						//Get current corner's position in world space
+						glm::vec3 currentCornerPos = (voxelCornerOffsets[i] * this->m_voxelResolution) + relativePos;
 
 						if (actorSdfComponent.expired())
 						{
 							std::cout << "\nError, ACTOR SDF COMPONENT EXPIRED";
 						}
 
-						//Calculate distance
-						//float distanceValue = SDF::GetSphereSDFValue(currentCornerPos, gridPosition, 4.f);
+						//Calculate signed distance of current corner
 						float distanceValue = actorSdfComponent.lock()->EvaluateSDF(currentCornerPos);
 						cornerSDFValues[i] = distanceValue;
 
@@ -311,28 +316,23 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 					std::vector<glm::vec3> intersectionPoints;
 					std::vector<glm::vec3> intersectionNormals;
 
-					//Array describes if an intersection occurs (first element), and if so, if intersection is + to -ve (second element) is true, else false.
 
-	/*				std::array<std::pair<bool, bool>, 3> adjacentEdgesCrossingOver{ {
-							std::make_pair(false, false),
-							std::make_pair(false, false),
-							std::make_pair(false, false),
-					} };
-	*/
-					HermiteData defaultHermiteData { glm::vec3(0), glm::vec3(1, 0, 0), std::numeric_limits<float>::min(), false };
+					HermiteData defaultHermiteData{ glm::vec3(0), glm::vec3(1, 0, 0), std::numeric_limits<float>::min(), false };
 
+					//Array describing hermite data for 3 edges per voxel
 					std::array<HermiteData, 3> adjacentEdgeHermiteData
 					{
 						{
 							defaultHermiteData,
-						    defaultHermiteData,
-						    defaultHermiteData,
+							defaultHermiteData,
+							defaultHermiteData,
 						}
 					};
 
-					std::vector<HermiteData> allEdgeHermiteData; 
+					//Vector containing hermite data for all 12 edges per voxel, used for computing vertex position
+					std::vector<HermiteData> allEdgeHermiteData;
 
-					//If none of the 3 adjacent edges have an intersection, it is true.
+					//If none of the 3 adjacent edges have an intersection, set flag. By default true.
 					bool bNoIntersectionFor3AdjacentEdges = true;
 
 					for (int i = 0; i < 12; ++i)
@@ -354,8 +354,8 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						//Find position along the edge where surface crosses signs
 
 						//TODO: convert position from grid relative to SDF center relative
-						const glm::vec3 cornerPos1 = (voxelCornerOffsets[cornerIndex1] * static_cast<float>(this->m_voxelSize)) + relativePos;
-						const glm::vec3 cornerPos2 = (voxelCornerOffsets[cornerIndex2] * static_cast<float>(this->m_voxelSize)) + relativePos;
+						const glm::vec3 cornerPos1 = (voxelCornerOffsets[cornerIndex1] * (this->m_voxelResolution)) + relativePos;
+						const glm::vec3 cornerPos2 = (voxelCornerOffsets[cornerIndex2] * (this->m_voxelResolution)) + relativePos;
 
 						//Get current intersection point by using linear interpolation
 						float interpolateFactor = abs(cornerSDFValues[cornerIndex1]) / (abs(cornerSDFValues[cornerIndex1]) + abs(cornerSDFValues[cornerIndex2]));
@@ -365,7 +365,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						//TODO: SAnity check whether point is within voxel
 
 						//Calculate normal using Finite Sum Difference
-						//const glm::vec3 intersectionNormal = CalculateSurfaceNormal(currIntersectionPoint, gridPosition, 4.f);
 						const glm::vec3 intersectionNormal = CalculateSurfaceNormal(currIntersectionPoint, actorSdfComponent);
 						intersectionNormals.push_back(intersectionNormal);
 
@@ -373,11 +372,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						if (i == 0)
 						{
 							////Mark intersection occurred 
-							//adjacentEdgesCrossingOver[0].first = true;
-							////If intersection is from + to -ve, mark as true, else false
-							//adjacentEdgesCrossingOver[0].second = (m1 < m2);
-
-							//adjacentEdgeHermiteData[0].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
 
 							adjacentEdgeHermiteData[0].distance = actorSdfComponent.lock()->EvaluateSDF(currIntersectionPoint);
 							adjacentEdgeHermiteData[0].normal = intersectionNormal;
@@ -390,12 +384,7 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						else if (i == 3)
 						{
 							//Mark intersection occurred 
-							//adjacentEdgesCrossingOver[1].first = true;
-							//If intersection is from + to -ve, mark as true, else false
-							//adjacentEdgesCrossingOver[1].second = (m1 < m2);
 
-
-							//adjacentEdgeHermiteData[1].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
 							adjacentEdgeHermiteData[1].distance = actorSdfComponent.lock()->EvaluateSDF(currIntersectionPoint);
 							adjacentEdgeHermiteData[1].normal = intersectionNormal;
 							adjacentEdgeHermiteData[1].position = currIntersectionPoint;
@@ -407,12 +396,7 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 						else if (i == 8)
 						{
 							//Mark intersection occurred 
-							//adjacentEdgesCrossingOver[2].first = true;
-							//If intersection is from + to -ve, mark as true, else false
-							//adjacentEdgesCrossingOver[2].second = (m1 < m2);
 
-
-							//adjacentEdgeHermiteData[2].distance = SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f);
 							adjacentEdgeHermiteData[2].distance = actorSdfComponent.lock()->EvaluateSDF(currIntersectionPoint);
 							adjacentEdgeHermiteData[2].normal = intersectionNormal;
 							adjacentEdgeHermiteData[2].position = currIntersectionPoint;
@@ -424,11 +408,6 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 
 
 						//Store hermite info of an edge
-						/*allEdgeHermiteData.push_back(
-							{ currIntersectionPoint, intersectionNormal, SDF::GetSphereSDFValue(currIntersectionPoint, gridPosition, 4.f), (m1 < m2)
-							}
-						);*/
-
 						allEdgeHermiteData.push_back(
 							{ currIntersectionPoint, intersectionNormal, actorSdfComponent.lock()->EvaluateSDF(currIntersectionPoint), (m1 < m2)
 							}
@@ -440,38 +419,28 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 					if (!bNoIntersectionFor3AdjacentEdges)
 					{
 						//Map voxel to adjacent edges hermite data array
-						voxelEdgesHermiteDataMap[GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)] = adjacentEdgeHermiteData;
+						voxelToEdgesHermiteDataMap[GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)] = adjacentEdgeHermiteData;
 					}
 
-					glm::vec3 vertexPos(0.f);
-					/*for (const glm::vec3& pos : intersectionPoints)
-					{
-						vertexPos += pos;
-					}*/
-
-					//Get centroid of intersection positions 
-					//vertexPos = vertexPos / static_cast<float>(intersectionPoints.size());
-
 					//Calculate the best vertex using Quadratic error function
+					glm::vec3 vertexPos(0.f);
 					vertexPos = QEFSolver::ComputeBestVertexPosition(allEdgeHermiteData);
 
 					//Calculate centroid of intersection normals
 					glm::vec3 vertexNormal(0.f);
 					for (const glm::vec3& normal : intersectionNormals)
-					{
 						vertexNormal += normal;
-					}
 
 					vertexNormal = glm::normalize(vertexNormal);
 
 					//SANITY CHECK: CHECK IF CURRENT UNIQUE ID HAS ALREADY BEEN SET FOR VOXEL-VERTEX MAP
-					if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)) != voxelVertexIndexMap.end())
+					if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)) != voxelVertexIndexMap.end())
 					{
 						std::cout << "ERROR: THIS UNIQUE ID HAS ALREADY BEEN SET\n";
 					}
 
 					//Map voxel to vertex array index position
-					voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)] = static_cast<int>(modelVertices.size());
+					voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)] = static_cast<int>(modelVertices.size());
 
 					//std::cout << "New Vertex: " << modelVertices.size() / 3<<", ";
 
@@ -495,21 +464,21 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 
 
 	//Iterate through the cubes again, and make the edge connections
-	for (int x = 0; x < this->m_gridWidth * m_voxelSize; x += m_voxelSize)
+	for (int x = 0; x < expandedGridWidth; x++)
 	{
-		for (int y = 0; y < this->m_gridHeight * m_voxelSize; y += m_voxelSize)
+		for (int y = 0; y < expandedGridHeight; y++)
 		{
-			for (int z = 0; z < this->m_gridDepth * m_voxelSize; z += m_voxelSize)
+			for (int z = 0; z < expandedGridDepth; z++)
 			{
 				//Check if there is no mapping, then no intersections for that voxel's 3 adjacent edges. Skip.
-				if (voxelEdgesHermiteDataMap.find(GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)) == voxelEdgesHermiteDataMap.end())
+				if (voxelToEdgesHermiteDataMap.find(GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)) == voxelToEdgesHermiteDataMap.end())
 				{
 					continue;
 				}
 
 
-				const std::array<HermiteData, 3> adjacentEdgesIntersection = voxelEdgesHermiteDataMap[
-					GetUniqueIndexForGrid(x, y, z, this->m_gridWidth, this->m_gridHeight)];
+				const std::array<HermiteData, 3> adjacentEdgesIntersection = voxelToEdgesHermiteDataMap[
+					GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)];
 
 
 				//Iterate over adjacent edges and make connections where possible
@@ -529,7 +498,7 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 							int curY = y + static_cast<int>(adjacentVoxelsOffsets[axis][i].y);
 							int curZ = z + static_cast<int>(adjacentVoxelsOffsets[axis][i].z);
 
-							auto it = voxelVertexIndexMap.find(GetUniqueIndexForGrid(curX, curY, curZ, this->m_gridWidth, this->m_gridHeight));
+							auto it = voxelVertexIndexMap.find(GetUniqueIndexForGrid(curX, curY, curZ, expandedGridWidth, expandedGridHeight));
 
 							if (it == voxelVertexIndexMap.end())
 								continue;  // If voxel is missing, just skip it
@@ -833,8 +802,13 @@ void DualContouring::GenerateMesh(std::vector<float>& vertices, std::vector<floa
 
 }
 
+void DualContouring::RegenerateMesh(std::vector<float>& vertices, std::vector<float>& normals,
+	std::vector<unsigned int>& indices, std::vector<float>& colors)
+{
+}
+
 int DualContouring::GetUniqueIndexForGrid(const int x, const int y, const int z, const int gridWidth,
-	const int gridHeight)
+                                          const int gridHeight)
 {
 	return x + gridWidth * (y + gridHeight * z);
 }
@@ -842,5 +816,5 @@ int DualContouring::GetUniqueIndexForGrid(const int x, const int y, const int z,
 void DualContouring::ClearHashMapData()
 {
 	voxelVertexIndexMap.clear();
-	voxelEdgesHermiteDataMap.clear();
+	voxelToEdgesHermiteDataMap.clear();
 }
