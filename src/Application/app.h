@@ -6,6 +6,7 @@
 #include <vector>
 #include <GLFW/glfw3.h>
 #include "Helpers/Settings.h"
+#include "Enums/AppEnums.h"
 
 class ACamera;
 class Settings;
@@ -46,6 +47,9 @@ private:
 	static void MouseCallback(GLFWwindow* window, double xposIn, double yposIn);
 	static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 	static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+	//Initially, the app state is modelling 
+	EAppState m_currentAppState = EAppState::Modelling;
 };
 
 // ~~ GLFW Functions ~~ 

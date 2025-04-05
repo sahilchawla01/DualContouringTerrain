@@ -117,6 +117,36 @@ void App::init()
 	DualContouring dualContouring(gridSize, gridSize, gridSize, 0.5f);
 
 
+	//Create the user-brush depth plane
+	std::shared_ptr<AActor> userBrushDepthPlane = std::make_shared<AActor>("User-brush Depth Plane", m_currentCamera);
+
+	//Setup the mesh for the plane
+	{
+		std::vector<float> planeVertices =
+		{
+			-0.5f, 0.0f, 0.5f,
+			-0.5f, 0.0f, -0.5f,
+			0.5f, 0.0f, 0.5f,
+			0.5f, 0.0f, -0.5f,
+		};
+
+		std::vector<float> planeNormals =
+		{
+			0.0f, 1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+		};
+
+		std::vector<unsigned int> planeIndices = {
+			0, 1, 2,
+			1, 3, 2
+		};
+
+		userBrushDepthPlane->SetupMeshComponent(EShaderOption::unlit, planeVertices, planeNormals, planeIndices);
+	}
+
+
 	//Render frames
 	while(!glfwWindowShouldClose(window))
 	{
@@ -150,7 +180,8 @@ void App::init()
 				ImGui::Checkbox("Enable SDF Mesh Rendering", &settings.bViewMesh);
 			}
 
-			if (ImGui::CollapsingHeader("Terrain SDFs"))
+			//Only show individual SDF settings if the app state is in modelling
+			if (m_currentAppState == EAppState::Modelling && ImGui::CollapsingHeader("Terrain SDFs"))
 			{
 				if (!terrainSDFComponent.expired())
 				{
@@ -231,6 +262,11 @@ void App::init()
 
 			}
 
+			if (ImGui::Button("Begin Editing"))
+			{
+				m_currentAppState = EAppState::Editing;
+			}
+
 			ImGui::End();
 			
 		}
@@ -239,20 +275,36 @@ void App::init()
 
 		//Render the SDF sphere
 		{
-			//If any changes occur in the SDF, regenerate the mesh
-			if (!terrainSDFComponent.expired() && terrainSDFComponent.lock()->GetShouldRegenerateMesh())
+			//Regenerate mesh behavior based on app state
+			if (m_currentAppState == EAppState::Modelling)
 			{
-				//Generate the mesh based on the new SDF
-				dualContouring.InitGenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent);
+				//If any changes occur in the SDF, regenerate the mesh
+				if (!terrainSDFComponent.expired() && terrainSDFComponent.lock()->GetShouldRegenerateMesh())
+				{
+					//Generate the mesh based on the new SDF
+					dualContouring.InitGenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent);
 
-				//Set up the mesh component after generating the mesh
-				terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+					//Set up the mesh component after generating the mesh
+					terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
 
-				//Unset flag to regenerate mesh
-				terrainSDFComponent.lock()->SetShouldRegenerateMesh(false);
+					//Unset flag to regenerate mesh
+					terrainSDFComponent.lock()->SetShouldRegenerateMesh(false);
+				}
+			} else if (m_currentAppState == EAppState::Editing)
+			{
+				//Utilize the voxel field to edit the mesh
+
+				//Render a spherical brush
+
+				//Render a visual helper in the Z-axis of the camera used for getting point of brush
+
+				//Keep brush depth plane at a distance from the camera 
+
+				userBrushDepthPlane->Render();
+
 			}
 
-			//Actually render the terrain mesh
+			//Render the terrain mesh
 			terrainActor->Render();
 			
 		}

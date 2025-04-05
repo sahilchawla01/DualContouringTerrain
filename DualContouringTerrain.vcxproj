@@ -186,6 +186,7 @@
     <ClInclude Include="src\Components\UActorComponent.h" />
     <ClInclude Include="src\Components\UMeshComponent.h" />
     <ClInclude Include="src\Components\USDFComponent.h" />
+    <ClInclude Include="src\Enums\AppEnums.h" />
     <ClInclude Include="src\Enums\EShaderOption.h" />
     <ClInclude Include="src\Helpers\DualContouring.h" />
     <ClInclude Include="src\Helpers\imgui\imgui_impl_glfw.h" />
