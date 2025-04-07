@@ -102,6 +102,8 @@ void ACamera::SetCameraPosition(glm::vec3 newCameraPosition, bool bAutoUpdateVie
 
 	//Simply update view matrix according to new position
 	if (bAutoUpdateViewMatrix) UpdateViewMatrix();
+
+	//std::cout<<"New Camera Position:" << currentCameraPosition.x << "," << currentCameraPosition.y << "," << currentCameraPosition.z<<"\n";
 }
 
 void ACamera::AddCameraPosition(glm::vec3 positionToAdd, bool bAutoUpdateViewMatrix)

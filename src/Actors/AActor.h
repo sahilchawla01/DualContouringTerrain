@@ -18,11 +18,17 @@ class AActor : public std::enable_shared_from_this<AActor>
 {
 
 public:
-	AActor(const std::string& name, const std::weak_ptr<ACamera> currentCamera, const glm::vec3& model_position = glm::vec3(0.0f), const glm::vec3& model_scale = glm::vec3(1.f));
+	AActor(const std::string& name, const std::weak_ptr<ACamera> currentCamera, const glm::vec3& model_position = glm::vec3(0.0f), const glm::vec3& model_scale = glm::vec3(1.f), const glm::vec3& model_rotation = glm::vec3(0.f));
 	virtual ~AActor();
 
 public:
+	// -- TRANSFORM RELATED FUNCTIONS --
+	void SetWorldPosition(const glm::vec3& worldPosition);
+	void SetWorldRotation(const glm::vec3& worldRotation);
+	void SetWorldRotation(const glm::mat4& worldRotationMatrix);
+
 	// GETTERS
+	const glm::vec3 GetWorldPosition() const { return m_worldPosition; }
 	std::vector<float> GetVertices() const;
 	glm::mat4 GetModelMatrix() const;
 
@@ -43,6 +49,10 @@ protected:
 
 	// TRANSFORM
 	glm::mat4 m_modelTransformMatrix;
+	glm::vec3 m_worldPosition;
+	// Stored as radian
+	glm::vec3 m_worldRotation;
+	glm::vec3 m_worldScale;
 
 	//MISC
 	std::weak_ptr<ACamera> currCamera;

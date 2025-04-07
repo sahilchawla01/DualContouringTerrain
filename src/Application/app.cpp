@@ -81,7 +81,7 @@ void App::init()
 	//Tell glfw to call the function when window size changes
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-
+	//Create important actors like the camera
 	CreateInitActors();
 
 
@@ -116,9 +116,10 @@ void App::init()
 
 	DualContouring dualContouring(gridSize, gridSize, gridSize, 0.5f);
 
-
 	//Create the user-brush depth plane
-	std::shared_ptr<AActor> userBrushDepthPlane = std::make_shared<AActor>("User-brush Depth Plane", m_currentCamera);
+	std::shared_ptr<AActor> userBrushDepthPlane = std::make_shared<AActor>("User-brush Depth Plane", m_currentCamera, m_currentCamera->GetCameraWorldPosition(), glm::vec3(6.0), glm::vec3(90, 0, 0));
+
+	float distanceToUserBrushPlane = 10.f;
 
 	//Setup the mesh for the plane
 	{
@@ -262,10 +263,18 @@ void App::init()
 
 			}
 
-			if (ImGui::Button("Begin Editing"))
+			//Only show begin editing option if app state is currently modelling
+			if (m_currentAppState == EAppState::Modelling && ImGui::Button("Begin Editing"))
 			{
 				m_currentAppState = EAppState::Editing;
 			}
+
+			if (m_currentAppState == EAppState::Editing)
+			{
+				ImGui::Text("Distance to Brush Depth Plane");
+				ImGui::InputFloat(":", &distanceToUserBrushPlane, 0.25f, 1.0f);
+			}
+
 
 			ImGui::End();
 			
@@ -298,7 +307,29 @@ void App::init()
 
 				//Render a visual helper in the Z-axis of the camera used for getting point of brush
 
-				//Keep brush depth plane at a distance from the camera 
+				//Keep brush depth plane at a distance from the camera
+				{
+					
+					glm::vec3 directionToCamera = glm::normalize(m_currentCamera->GetCameraWorldPosition() - userBrushDepthPlane->GetWorldPosition());
+
+					// +Y is the model's "forward" direction
+					glm::vec3 forward = directionToCamera; // model's +Y points here
+					glm::vec3 right = glm::normalize(glm::cross(glm::vec3(0, 1, 0), forward)); // model's +X
+					glm::vec3 up = glm::normalize(glm::cross(forward, right)); // model's +Z (orthogonal up)
+
+					glm::mat4 rotationMatrix(1.0f);
+					rotationMatrix[0] = glm::vec4(right, 0.0f);   // X-axis
+					rotationMatrix[1] = glm::vec4(forward, 0.0f); // Y-axis (your normal)
+					rotationMatrix[2] = glm::vec4(up, 0.0f);      // Z-axis
+					rotationMatrix[3] = glm::vec4(0, 0, 0, 1);
+
+					//Plane always faces the camera
+					userBrushDepthPlane->SetWorldRotation(rotationMatrix);
+
+					//Plane always stays in front of the camera at a distance 'X'
+					userBrushDepthPlane->SetWorldPosition(m_currentCamera->GetCameraWorldPosition() + (m_currentCamera->GetCameraForwardDirVector() * distanceToUserBrushPlane));
+
+				}
 
 				userBrushDepthPlane->Render();
 
@@ -361,26 +392,18 @@ void App::ProcessInput(GLFWwindow* window)
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		{
 			m_currentCamera->ProcessKeyboardInput(ECameraMoveDirection::FORWARD, deltaTime);
-			/*glm::vec3 newCamPos = currentCameraPosition + (cameraSpeed * deltaTime) * cameraFront;
-			SetCameraPosition(newCamPos);*/
 		}
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		{
 			m_currentCamera->ProcessKeyboardInput(ECameraMoveDirection::BACKWARD, deltaTime);
-			/*glm::vec3 newCamPos = currentCameraPosition - (cameraSpeed * deltaTime) * cameraFront;
-			SetCameraPosition(newCamPos);*/
 		}
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		{
 			m_currentCamera->ProcessKeyboardInput(ECameraMoveDirection::LEFT, deltaTime);
-			/*glm::vec3 newCamPos = currentCameraPosition - glm::normalize(glm::cross(cameraFront, cameraUp)) * (cameraSpeed * deltaTime);
-			SetCameraPosition(newCamPos);*/
 		}
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		{
 			m_currentCamera->ProcessKeyboardInput(ECameraMoveDirection::RIGHT, deltaTime);
-			/*glm::vec3 newCamPos = currentCameraPosition + glm::normalize(glm::cross(cameraFront, cameraUp)) * (cameraSpeed * deltaTime);
-			SetCameraPosition(newCamPos);*/
 		}
 	} else
 	{
