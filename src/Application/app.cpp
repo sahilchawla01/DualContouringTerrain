@@ -59,6 +59,8 @@ void App::init()
 	glfwSetCursorPosCallback(window, App::MouseCallback);
 	glfwSetScrollCallback(window, App::ScrollCallback);
 	glfwSetKeyCallback(window, App::KeyCallback);
+	glfwSetMouseButtonCallback(window, App::MouseClickCallback);
+
 	glfwSetInputMode(window, GLFW_CURSOR, settings.bIsCursorEnabled ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 
 	//Load GLAD before any OpenGL calls, (to find function pointers for OpenGL)
@@ -117,9 +119,9 @@ void App::init()
 	DualContouring dualContouring(gridSize, gridSize, gridSize, 0.5f);
 
 	//Create the user-brush depth plane
-	std::shared_ptr<AActor> userBrushDepthPlane = std::make_shared<AActor>("User-brush Depth Plane", m_currentCamera, m_currentCamera->GetCameraWorldPosition(), glm::vec3(6.0), glm::vec3(90, 0, 0));
+	m_userBrushDepthPlane = std::make_shared<AActor>("User-brush Depth Plane", m_currentCamera, m_currentCamera->GetCameraWorldPosition(), glm::vec3(6.0), glm::vec3(90, 0, 0));
 
-	float distanceToUserBrushPlane = 10.f;
+	distanceToUserBrushPlane = 10.f;
 
 	//Setup the mesh for the plane
 	{
@@ -144,7 +146,7 @@ void App::init()
 			1, 3, 2
 		};
 
-		userBrushDepthPlane->SetupMeshComponent(EShaderOption::unlit, planeVertices, planeNormals, planeIndices);
+		m_userBrushDepthPlane->SetupMeshComponent(EShaderOption::unlit, planeVertices, planeNormals, planeIndices);
 	}
 
 
@@ -310,7 +312,7 @@ void App::init()
 				//Keep brush depth plane at a distance from the camera
 				{
 					
-					glm::vec3 directionToCamera = glm::normalize(m_currentCamera->GetCameraWorldPosition() - userBrushDepthPlane->GetWorldPosition());
+					glm::vec3 directionToCamera = glm::normalize(m_currentCamera->GetCameraWorldPosition() - m_userBrushDepthPlane->GetWorldPosition());
 
 					// +Y is the model's "forward" direction
 					glm::vec3 forward = directionToCamera; // model's +Y points here
@@ -324,14 +326,14 @@ void App::init()
 					rotationMatrix[3] = glm::vec4(0, 0, 0, 1);
 
 					//Plane always faces the camera
-					userBrushDepthPlane->SetWorldRotation(rotationMatrix);
+					m_userBrushDepthPlane->SetWorldRotation(rotationMatrix);
 
 					//Plane always stays in front of the camera at a distance 'X'
-					userBrushDepthPlane->SetWorldPosition(m_currentCamera->GetCameraWorldPosition() + (m_currentCamera->GetCameraForwardDirVector() * distanceToUserBrushPlane));
+					m_userBrushDepthPlane->SetWorldPosition(m_currentCamera->GetCameraWorldPosition() + (m_currentCamera->GetCameraForwardDirVector() * distanceToUserBrushPlane));
 
 				}
 
-				userBrushDepthPlane->Render();
+				m_userBrushDepthPlane->Render();
 
 			}
 
@@ -362,6 +364,50 @@ void App::init()
 
 	//Terminate the window
 	glfwTerminate();
+}
+
+void App::RaycastForBrushPlane(double xPos, double yPos)
+{
+	//std::cout << "Current cursor x and y pos:" << xPos<<","<<yPos<<"\n";
+
+	glm::vec4 rayClipSpace = glm::vec4(xPos, yPos, -1.0, 1.0);
+
+	glm::vec4 rayViewSpace = glm::inverse(m_currentCamera->GetProjectionMatrix()) * rayClipSpace;
+	rayViewSpace = glm::vec4(rayViewSpace.x, rayViewSpace.y, -1.0, 0.0);
+
+	glm::vec3 rayWorldSpace = glm::normalize(glm::inverse(m_currentCamera->GetViewMatrix()) * rayViewSpace);
+
+	//Ray - plane intersection
+	float denom = glm::dot(-m_currentCamera->GetCameraForwardDirVector(), rayWorldSpace);
+
+	glm::vec3 planePoint = m_currentCamera->GetCameraWorldPosition() + m_currentCamera->GetCameraForwardDirVector() * distanceToUserBrushPlane;
+
+	if (glm::abs(denom) > 1e-6f) {
+		float t = glm::dot((planePoint - m_currentCamera->GetCameraWorldPosition()), -m_currentCamera->GetCameraForwardDirVector()) / denom;
+		glm::vec3 hitPoint = m_currentCamera->GetCameraWorldPosition() + t * rayWorldSpace;
+
+		// Convert hitPoint to local space and scale it
+		glm::vec3 localHit = glm::vec3(glm::inverse(m_userBrushDepthPlane->GetModelMatrix()) * glm::vec4(hitPoint, 1.0f));
+
+		/*std::cout << "Local Hit Point: " << localHit.x << ", " << localHit.y << ", " << localHit.z << "\n";
+		std::cout << "Camera Position: " << m_currentCamera->GetCameraWorldPosition().x << ", " << m_currentCamera->GetCameraWorldPosition().y << ", " << m_currentCamera->GetCameraWorldPosition().z << "\n\n";
+		std::cout << "Plane Size:" << planeSize.x << ", " << planeSize.y << "\n";*/
+
+		// Check if hit is inside bounds
+		if (glm::abs(localHit.x) <= 0.5f && glm::abs(localHit.z) <= 0.5f) {
+
+			std::cout << "Raycast hit the plane!\n";
+			std::cout << "Global Hit Point: " << hitPoint.x << ", " << hitPoint.y << ", " << hitPoint.z << "\n";
+	
+		}
+		else
+		{
+			//std::cout << "Raycast did not hit the plane!\n\n";
+		}
+
+		std::cout << "\n";
+	}
+
 }
 
 void App::PollSettings(GLFWwindow* window) const
@@ -434,6 +480,40 @@ void App::MouseCallback(GLFWwindow* window, double xposIn, double yposIn)
 	App* appPtr = static_cast<App*>(glfwGetWindowUserPointer(window));
 
 	appPtr->m_currentCamera->ProcessMouseInput(static_cast<float>(xposIn), static_cast<float>(yposIn), appPtr->settings.bIsCursorEnabled);
+}
+
+void App::MouseClickCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	//Get app pointer
+	App* appPtr = static_cast<App*>(glfwGetWindowUserPointer(window));
+
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+	{
+		//In editing mode, ray-cast from current cursor position
+		if (appPtr->m_currentAppState == EAppState::Editing)
+		{
+			//Poll the cursor position
+			double xpos, ypos;
+			glfwGetCursorPos(window, &xpos, &ypos);
+
+			//Normalize the cursor position to normalized device coordinates range (-1 : 1)
+			double n_xPos = xpos;
+			double n_yPos = ypos;
+
+			int width, height;
+			glfwGetWindowSize(window, &width, &height);
+
+			n_xPos = ((n_xPos * 2) / width) - 1.0;
+
+			//To ensure range is from [1: -1] as y axis is positive at the top
+			n_yPos = 1.0 - ((n_yPos * 2) / height);
+
+			appPtr->RaycastForBrushPlane(n_xPos, n_yPos);
+
+		}
+
+
+	}
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called

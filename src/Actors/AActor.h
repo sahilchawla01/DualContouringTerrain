@@ -29,6 +29,8 @@ public:
 
 	// GETTERS
 	const glm::vec3 GetWorldPosition() const { return m_worldPosition; }
+	const glm::vec3 GetWorldScale() const { return m_worldScale; }
+
 	std::vector<float> GetVertices() const;
 	glm::mat4 GetModelMatrix() const;
 
