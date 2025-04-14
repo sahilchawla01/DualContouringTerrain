@@ -27,6 +27,11 @@ void UMeshComponent::Init(EShaderOption shaderOption)
 
 void UMeshComponent::SetObjectColor(glm::vec3 color)
 {
+	objectColor = glm::vec4(color, 1.0f);
+}
+
+void UMeshComponent::SetObjectColor(glm::vec4 color)
+{
 	objectColor = color;
 }
 
@@ -180,7 +185,7 @@ void UMeshComponent::UseShader()
 		{
 			currentShader->setMat4("mvp", mvpMatrix);
 			//By default, color is white
-			currentShader->setVec3("color", objectColor);
+			currentShader->setVec4("color", objectColor);
 			break;
 		}
 	    case EShaderOption::flat_shade:
@@ -190,7 +195,7 @@ void UMeshComponent::UseShader()
 		}
 		case EShaderOption::lit:
 		{
-			currentShader->setVec3("objectColor", objectColor);
+			currentShader->setVec4("objectColor", objectColor);
 			currentShader->setMat4("modelViewMatrix", modelViewMatrix);
 			currentShader->setMat4("mvp", mvpMatrix);
 			//Set shader values

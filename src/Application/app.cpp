@@ -80,6 +80,9 @@ void App::init()
 	//Enable depth buffer and depth testing
 	glEnable(GL_DEPTH_TEST);
 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	//Tell glfw to call the function when window size changes
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
@@ -147,6 +150,7 @@ void App::init()
 		};
 
 		m_userBrushDepthPlane->SetupMeshComponent(EShaderOption::unlit, planeVertices, planeNormals, planeIndices);
+		m_userBrushDepthPlane->GetMeshComponent().lock()->SetObjectColor(glm::vec4(1.0f, 1.0f, 1.0f, 0.3f));
 	}
 
 
@@ -339,6 +343,12 @@ void App::init()
 
 		//Render the SDF sphere
 		{
+			//Render the terrain mesh
+			terrainActor->Render();
+
+			//Render dual contouring vertices
+			dualContouring.DebugDrawVertices(terrainActor->GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));
+
 			//Regenerate mesh behavior based on app state
 			if (m_currentAppState == EAppState::Modelling)
 			{
@@ -397,14 +407,9 @@ void App::init()
 				}
 
 			}
-
-			//Render the terrain mesh
-			terrainActor->Render();
 			
 		}
 
-		//Render dual contouring vertices
-		dualContouring.DebugDrawVertices(terrainActor->GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));
 
 		//Render the UI
 		ImGui::Render();

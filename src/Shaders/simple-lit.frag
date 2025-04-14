@@ -19,7 +19,7 @@ struct Light {
 
 uniform Material mat;
 uniform Light dirLight;
-uniform vec3 objectColor;
+uniform vec4 objectColor;
 
 
 in vec3 vPos; 
@@ -60,10 +60,10 @@ void main()
 	vec3 specular =  dirLight.specular * specularStrength * (spec * mat.specular);
 	
 	//-- Calculate Phong RESULTANT -- 
-	vec3 phongResult = (ambient + diffuse + specular) * objectColor;
+	vec4 phongResult = vec4((ambient + diffuse + specular) * objectColor.rgb, objectColor.a);
 
 	//-- Add a little color from Position as well -- 
 	//phongResult = phongResult + 0.1 * vPos;
 
-	FragColor = vec4(phongResult, 1.0);
+	FragColor = phongResult;
 }

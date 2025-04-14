@@ -4,6 +4,7 @@
 
 #include <Enums/EShaderOption.h>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
 #include "UActorComponent.h"
 
@@ -24,6 +25,7 @@ public:
 	//IMP!! This is called from AActor when AActor::Init() is called | Sets up buffers and shaders
 	void Init(EShaderOption shaderOption);
 	void SetObjectColor(glm::vec3 color);
+	void SetObjectColor(glm::vec4 color);
 	virtual void Render();
 
 protected:
@@ -41,7 +43,7 @@ protected:
 	std::vector<float> colors;
 	std::vector<unsigned int> indices;
 	//By default, the object color is white
-	glm::vec3 objectColor = glm::vec3(1.f);
+	glm::vec4 objectColor = glm::vec4(1.f);
 
 	//MISC:
 	std::unique_ptr<Shader> currentShader;
