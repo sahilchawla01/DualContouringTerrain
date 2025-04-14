@@ -4,6 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include "Helpers/Settings.h"
 #include "Enums/AppEnums.h"
@@ -11,6 +12,13 @@
 class ACamera;
 class AActor;
 class Settings;
+
+
+struct RayCastResult
+{
+	glm::vec3 hitWorldPos = glm::vec3(0);
+	bool bHit = false;
+};
 
 class App
 {
@@ -44,12 +52,13 @@ private:
 	float distanceToUserBrushPlane = 10.f;
 
 private:
-	void RaycastForBrushPlane(double xPos, double yPos);
+	RayCastResult RaycastForBrushPlane(double xPos, double yPos);
 
 	//If any changes have occurred in settings, reflect changes
 	void PollSettings(GLFWwindow* window) const;
 	void CreateInitActors();
 	void ProcessInput(GLFWwindow* window);
+	static glm::vec2 GetCursorPosNDC(GLFWwindow* window);
 	static int GetUniqueIndexForGrid(const int x, const int y, const int z, const int gridWidth, const int gridHeight);
 	static void MouseCallback(GLFWwindow* window, double xposIn, double yposIn);
 	static void MouseClickCallback(GLFWwindow* window, int button, int action, int mods);

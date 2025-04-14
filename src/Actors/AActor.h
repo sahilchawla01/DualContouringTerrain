@@ -36,6 +36,7 @@ public:
 
 	//COMPONENT GETTERS
 	std::weak_ptr<USDFComponent> GetSDFComponent() const;
+	std::weak_ptr<UMeshComponent> GetMeshComponent(); 
 
 	//Creates and sets shaders, and buffers for mesh component
 	void SetupMeshComponent(EShaderOption e_shaderOption, const std::vector<float>& model_vertices, const std::vector<float>& model_normals, const std::vector<unsigned int>& model_indices, const std::vector<float>& model_colors = std::vector<float>{});

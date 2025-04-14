@@ -6,7 +6,6 @@
 
 #include <iostream>
 #include <glad/glad.h>
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "../Helpers/Shader.h"
@@ -17,6 +16,7 @@
 //IMGUI INCLUDES
 
 #include "Actors/AActor.h"
+#include "Components/UMeshComponent.h"
 #include "Components/USDFComponent.h"
 #include "Enums/EShaderOption.h"
 #include "Helpers/imgui/imgui.h"
@@ -149,6 +149,59 @@ void App::init()
 		m_userBrushDepthPlane->SetupMeshComponent(EShaderOption::unlit, planeVertices, planeNormals, planeIndices);
 	}
 
+
+	//Create the user brush (sphere)
+	std::shared_ptr<AActor> userBrushSphere= std::make_shared<AActor>("User Brush(Sphere)", m_currentCamera, glm::vec3(0));
+
+	//Setup the mesh for the user brush (sphere)
+	{
+		std::vector<float> vertices;
+		std::vector<float> normals;
+		std::vector<unsigned int> indices;
+		float radius = 0.5f;
+		int sectorCount = 16;
+		int stackCount = 16;
+
+		float x, y, z, xy;                              // vertex position
+		float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
+
+		float sectorStep = 2.f * glm::pi<float>() / sectorCount;
+		float stackStep = glm::pi<float>() / stackCount;
+		float sectorAngle, stackAngle;
+
+		for (int i = 0; i <= stackCount; ++i)
+		{
+			stackAngle = glm::pi<float>() / 2 - i * stackStep;        // starting from pi/2 to -pi/2
+			xy = radius * cosf(stackAngle);             // r * cos(u)
+			z = radius * sinf(stackAngle);              // r * sin(u)
+
+			// add (sectorCount+1) vertices per stack
+			// first and last vertices have same position and normal, but different tex coords
+			for (int j = 0; j <= sectorCount; ++j)
+			{
+				sectorAngle = j * sectorStep;           // starting from 0 to 2pi
+
+				// vertex position (x, y, z)
+				x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
+				y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
+				vertices.push_back(x);
+				vertices.push_back(y);
+				vertices.push_back(z);
+
+				// normalized vertex normal (nx, ny, nz)
+				nx = x * lengthInv;
+				ny = y * lengthInv;
+				nz = z * lengthInv;
+				normals.push_back(nx);
+				normals.push_back(ny);
+				normals.push_back(nz);
+
+			}
+		}
+
+		userBrushSphere->SetupMeshComponent(EShaderOption::unlit, vertices, normals, indices);
+		userBrushSphere->GetMeshComponent().lock()->SetObjectColor(glm::vec3(0.5f, 0.5f, 1.0f));
+	}
 
 	//Render frames
 	while(!glfwWindowShouldClose(window))
@@ -305,11 +358,7 @@ void App::init()
 			{
 				//Utilize the voxel field to edit the mesh
 
-				//Render a spherical brush
-
 				//Render a visual helper in the Z-axis of the camera used for getting point of brush
-
-				//Keep brush depth plane at a distance from the camera
 				{
 					
 					glm::vec3 directionToCamera = glm::normalize(m_currentCamera->GetCameraWorldPosition() - m_userBrushDepthPlane->GetWorldPosition());
@@ -334,6 +383,18 @@ void App::init()
 				}
 
 				m_userBrushDepthPlane->Render();
+
+				//Render a spherical brush
+				{
+					glm::vec2 ndcCoords = GetCursorPosNDC(window);
+					RayCastResult raycastResult = RaycastForBrushPlane(ndcCoords.x, ndcCoords.y);
+
+					if (raycastResult.bHit)
+					{
+						userBrushSphere->SetWorldPosition(raycastResult.hitWorldPos);
+						userBrushSphere->Render();
+					}
+				}
 
 			}
 
@@ -366,9 +427,11 @@ void App::init()
 	glfwTerminate();
 }
 
-void App::RaycastForBrushPlane(double xPos, double yPos)
+RayCastResult App::RaycastForBrushPlane(double xPos, double yPos)
 {
 	//std::cout << "Current cursor x and y pos:" << xPos<<","<<yPos<<"\n";
+
+	RayCastResult hitResult;
 
 	glm::vec4 rayClipSpace = glm::vec4(xPos, yPos, -1.0, 1.0);
 
@@ -384,10 +447,10 @@ void App::RaycastForBrushPlane(double xPos, double yPos)
 
 	if (glm::abs(denom) > 1e-6f) {
 		float t = glm::dot((planePoint - m_currentCamera->GetCameraWorldPosition()), -m_currentCamera->GetCameraForwardDirVector()) / denom;
-		glm::vec3 hitPoint = m_currentCamera->GetCameraWorldPosition() + t * rayWorldSpace;
+		hitResult.hitWorldPos = m_currentCamera->GetCameraWorldPosition() + t * rayWorldSpace;
 
 		// Convert hitPoint to local space and scale it
-		glm::vec3 localHit = glm::vec3(glm::inverse(m_userBrushDepthPlane->GetModelMatrix()) * glm::vec4(hitPoint, 1.0f));
+		glm::vec3 localHit = glm::vec3(glm::inverse(m_userBrushDepthPlane->GetModelMatrix()) * glm::vec4(hitResult.hitWorldPos, 1.0f));
 
 		/*std::cout << "Local Hit Point: " << localHit.x << ", " << localHit.y << ", " << localHit.z << "\n";
 		std::cout << "Camera Position: " << m_currentCamera->GetCameraWorldPosition().x << ", " << m_currentCamera->GetCameraWorldPosition().y << ", " << m_currentCamera->GetCameraWorldPosition().z << "\n\n";
@@ -396,18 +459,21 @@ void App::RaycastForBrushPlane(double xPos, double yPos)
 		// Check if hit is inside bounds
 		if (glm::abs(localHit.x) <= 0.5f && glm::abs(localHit.z) <= 0.5f) {
 
-			std::cout << "Raycast hit the plane!\n";
-			std::cout << "Global Hit Point: " << hitPoint.x << ", " << hitPoint.y << ", " << hitPoint.z << "\n";
+			//std::cout << "Raycast hit the plane!\n";
+			//std::cout << "Global Hit Point: " << hitResult.hitWorldPos.x << ", " << hitResult.hitWorldPos.y << ", " << hitResult.hitWorldPos.z << "\n";
 	
+			hitResult.bHit = true;
 		}
 		else
 		{
 			//std::cout << "Raycast did not hit the plane!\n\n";
 		}
 
-		std::cout << "\n";
+		//std::cout << "\n";
+
 	}
 
+	return hitResult;
 }
 
 void App::PollSettings(GLFWwindow* window) const
@@ -492,28 +558,36 @@ void App::MouseClickCallback(GLFWwindow* window, int button, int action, int mod
 		//In editing mode, ray-cast from current cursor position
 		if (appPtr->m_currentAppState == EAppState::Editing)
 		{
-			//Poll the cursor position
-			double xpos, ypos;
-			glfwGetCursorPos(window, &xpos, &ypos);
+			
+			glm::vec2 ndcCoords = GetCursorPosNDC(window);
 
-			//Normalize the cursor position to normalized device coordinates range (-1 : 1)
-			double n_xPos = xpos;
-			double n_yPos = ypos;
-
-			int width, height;
-			glfwGetWindowSize(window, &width, &height);
-
-			n_xPos = ((n_xPos * 2) / width) - 1.0;
-
-			//To ensure range is from [1: -1] as y axis is positive at the top
-			n_yPos = 1.0 - ((n_yPos * 2) / height);
-
-			appPtr->RaycastForBrushPlane(n_xPos, n_yPos);
+			appPtr->RaycastForBrushPlane(ndcCoords.x, ndcCoords.y);
 
 		}
 
 
 	}
+}
+
+glm::vec2 App::GetCursorPosNDC(GLFWwindow* window)
+{
+	//Poll the cursor position
+	double xpos, ypos;
+	glfwGetCursorPos(window, &xpos, &ypos);
+
+	//Normalize the cursor position to normalized device coordinates range (-1 : 1)
+	double n_xPos = xpos;
+	double n_yPos = ypos;
+
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+
+	n_xPos = ((n_xPos * 2) / width) - 1.0;
+
+	//To ensure range is from [1: -1] as y axis is positive at the top
+	n_yPos = 1.0 - ((n_yPos * 2) / height);
+
+	return { n_xPos, n_yPos };
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called

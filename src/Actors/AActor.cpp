@@ -53,6 +53,11 @@ std::weak_ptr<USDFComponent> AActor::GetSDFComponent() const
 	return sdfComponent;
 }
 
+std::weak_ptr<UMeshComponent> AActor::GetMeshComponent()
+{
+	return meshComponent;
+}
+
 glm::mat4 AActor::GetMVPMatrix() const
 {
 	//If camera doesn't exist, HUUUUGE error
