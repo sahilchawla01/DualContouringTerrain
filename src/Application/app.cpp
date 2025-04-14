@@ -126,7 +126,7 @@ void App::init()
 
 	distanceToUserBrushPlane = 10.f;
 
-	//Setup the mesh for the plane
+	//Setup the user brush depth plane
 	{
 		std::vector<float> planeVertices =
 		{
@@ -157,7 +157,7 @@ void App::init()
 	//Create the user brush (sphere)
 	std::shared_ptr<AActor> userBrushSphere= std::make_shared<AActor>("User Brush(Sphere)", m_currentCamera, glm::vec3(0));
 
-	//Setup the mesh for the user brush (sphere)
+	//Setup the user brush (sphere)
 	{
 		std::vector<float> vertices;
 		std::vector<float> normals;
@@ -203,7 +203,30 @@ void App::init()
 			}
 		}
 
-		userBrushSphere->SetupMeshComponent(EShaderOption::unlit, vertices, normals, indices);
+		for (int i = 0; i < stackCount; ++i)
+		{
+			int k1 = i * (sectorCount + 1);     // beginning of current stack
+			int k2 = k1 + sectorCount + 1;      // beginning of next stack
+
+			for (int j = 0; j < sectorCount; ++j, ++k1, ++k2)
+			{
+				// 2 triangles per quad (not for top and bottom stacks)
+				if (i != 0) {
+					indices.push_back(k1);
+					indices.push_back(k2);
+					indices.push_back(k1 + 1);
+				}
+
+				if (i != (stackCount - 1)) {
+					indices.push_back(k1 + 1);
+					indices.push_back(k2);
+					indices.push_back(k2 + 1);
+				}
+			}
+		}
+
+
+		userBrushSphere->SetupMeshComponent(EShaderOption::lit, vertices, normals, indices);
 		userBrushSphere->GetMeshComponent().lock()->SetObjectColor(glm::vec3(0.5f, 0.5f, 1.0f));
 	}
 
