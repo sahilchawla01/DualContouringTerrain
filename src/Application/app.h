@@ -2,12 +2,11 @@
 
 
 #include <memory>
-#include <unordered_map>
-#include <vector>
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include "Helpers/Settings.h"
 #include "Enums/AppEnums.h"
+#include "Helpers/Brushes/SphereBrush.h"
 
 class ACamera;
 class AActor;
@@ -39,6 +38,9 @@ public:
 
 private:
 	std::shared_ptr<ACamera> m_currentCamera;
+	std::shared_ptr<AActor> m_terrainActor;
+	SphereBrush m_sphereBrush; 
+	RayCastResult m_userBrushRaycastResult;
 
 	int window_width = 1200;
 	int window_height = 1080;

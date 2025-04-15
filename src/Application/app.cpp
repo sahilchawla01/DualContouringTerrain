@@ -102,11 +102,11 @@ void App::init()
 	ImGui_ImplOpenGL3_Init();
 
 	//Create Sphere Actor
-	std::shared_ptr<AActor> terrainActor = std::make_shared<AActor>("Terrain", m_currentCamera);
-	terrainActor->SetupSDFComponent();
+	m_terrainActor = std::make_shared<AActor>("Terrain", m_currentCamera);
+	m_terrainActor->SetupSDFComponent();
 
 	//Attach the sdf component and add relevant sdfs within it
-	const std::weak_ptr<USDFComponent> terrainSDFComponent = terrainActor->GetSDFComponent();
+	const std::weak_ptr<USDFComponent> terrainSDFComponent = m_terrainActor->GetSDFComponent();
 	if (!terrainSDFComponent.expired())
 	{
 		//terrainSDFComponent.lock()->AddSDF<BoxSDF>(glm::vec3(-3.2f, 4.8f, -3.2f), glm::vec3(1.0f));
@@ -157,12 +157,16 @@ void App::init()
 	//Create the user brush (sphere)
 	std::shared_ptr<AActor> userBrushSphere= std::make_shared<AActor>("User Brush(Sphere)", m_currentCamera, glm::vec3(0));
 
+	//By default, don't update sphere
+	m_sphereBrush.bUpdateSDF = false;
+
+
 	//Setup the user brush (sphere)
 	{
 		std::vector<float> vertices;
 		std::vector<float> normals;
 		std::vector<unsigned int> indices;
-		float radius = 0.5f;
+		float radius = 1.f;
 		int sectorCount = 16;
 		int stackCount = 16;
 
@@ -364,13 +368,10 @@ void App::init()
 
 		//~~ Handle Rendering ~~
 
-		//Render the SDF sphere
+		//Render the terrain
 		{
-			//Render the terrain mesh
-			terrainActor->Render();
-
 			//Render dual contouring vertices
-			dualContouring.DebugDrawVertices(terrainActor->GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));
+			dualContouring.DebugDrawVertices(m_terrainActor->GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));
 
 			//Regenerate mesh behavior based on app state
 			if (m_currentAppState == EAppState::Modelling)
@@ -382,16 +383,21 @@ void App::init()
 					dualContouring.InitGenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent);
 
 					//Set up the mesh component after generating the mesh
-					terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+					m_terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
 
 					//Unset flag to regenerate mesh
 					terrainSDFComponent.lock()->SetShouldRegenerateMesh(false);
 				}
+
+				//Render the terrain mesh
+				m_terrainActor->Render();
+
 			} else if (m_currentAppState == EAppState::Editing)
 			{
+
 				//Utilize the voxel field to edit the mesh
 
-				//Render a visual helper in the Z-axis of the camera used for getting point of brush
+				//Setup a visual helper in the Z-axis of the camera used for getting point of brush
 				{
 					
 					glm::vec3 directionToCamera = glm::normalize(m_currentCamera->GetCameraWorldPosition() - m_userBrushDepthPlane->GetWorldPosition());
@@ -413,21 +419,44 @@ void App::init()
 					//Plane always stays in front of the camera at a distance 'X'
 					m_userBrushDepthPlane->SetWorldPosition(m_currentCamera->GetCameraWorldPosition() + (m_currentCamera->GetCameraForwardDirVector() * distanceToUserBrushPlane));
 
+					
 				}
 
-				m_userBrushDepthPlane->Render();
-
-				//Render a spherical brush
+				//Setup and render a spherical brush
 				{
-					glm::vec2 ndcCoords = GetCursorPosNDC(window);
-					RayCastResult raycastResult = RaycastForBrushPlane(ndcCoords.x, ndcCoords.y);
 
-					if (raycastResult.bHit)
+					if (settings.bIsCursorEnabled)
 					{
-						userBrushSphere->SetWorldPosition(raycastResult.hitWorldPos);
-						userBrushSphere->Render();
+						glm::vec2 ndcCoords = GetCursorPosNDC(window);
+						m_userBrushRaycastResult = RaycastForBrushPlane(ndcCoords.x, ndcCoords.y);
+
+						if (m_userBrushRaycastResult.bHit)
+						{
+							userBrushSphere->SetWorldPosition(m_userBrushRaycastResult.hitWorldPos);
+							userBrushSphere->Render();
+						}
+
+						if (m_sphereBrush.bUpdateSDF == true)
+						{
+							m_sphereBrush.bUpdateSDF = false;
+
+							//Update voxel field based on brush
+							dualContouring.ApplyBrushToVoxels(1.f, userBrushSphere->GetWorldPosition());
+
+							//Update the mesh based on the updated field
+							dualContouring.UpdateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+
+							//Set up the mesh component after generating the mesh
+							m_terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+						}
 					}
+
 				}
+
+				//Render the terrain mesh
+				m_terrainActor->Render();
+				//Render transparent object last
+				m_userBrushDepthPlane->Render();
 
 			}
 			
@@ -583,14 +612,11 @@ void App::MouseClickCallback(GLFWwindow* window, int button, int action, int mod
 
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 	{
-		//In editing mode, ray-cast from current cursor position
-		if (appPtr->m_currentAppState == EAppState::Editing)
+		//While editing, if there is a raycast hit and the user left-clicked, add to the SDF accordingly
+		if (appPtr->m_currentAppState == EAppState::Editing && appPtr->m_userBrushRaycastResult.bHit)
 		{
-			
-			glm::vec2 ndcCoords = GetCursorPosNDC(window);
-
-			appPtr->RaycastForBrushPlane(ndcCoords.x, ndcCoords.y);
-
+			//Flag updating the SDF
+			appPtr->m_sphereBrush.bUpdateSDF = true;
 		}
 
 

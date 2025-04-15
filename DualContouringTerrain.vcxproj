@@ -188,6 +188,7 @@
     <ClInclude Include="src\Components\USDFComponent.h" />
     <ClInclude Include="src\Enums\AppEnums.h" />
     <ClInclude Include="src\Enums\EShaderOption.h" />
+    <ClInclude Include="src\Helpers\Brushes\SphereBrush.h" />
     <ClInclude Include="src\Helpers\DualContouring.h" />
     <ClInclude Include="src\Helpers\imgui\imgui_impl_glfw.h" />
     <ClInclude Include="src\Helpers\imgui\imgui_impl_opengl3.h" />
