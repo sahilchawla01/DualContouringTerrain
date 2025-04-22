@@ -156,13 +156,15 @@ void ACamera::DisableFastCamera()
 
 void ACamera::ProcessMouseInput(float xPos, float yPos, bool bIsCursorEnabled = false)
 {
-	//If cursor is enabled, don't move camera around
+	//If cursor is enabled, don't move camera around, and store the last positions
 	if (bIsCursorEnabled)
 	{
+		lastX = xPos;
+		lastY = yPos;
 		return;
 	}
 
-	//If mouse hasn't moved since start of the window
+	//If camera has not been moved since app started
 	if (!bHasCameraMoved)
 	{
 		lastX = xPos;
