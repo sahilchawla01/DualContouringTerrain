@@ -135,10 +135,10 @@ const glm::vec3 DualContouring::CalculateSurfaceNormal(const glm::vec3& intersec
 	return glm::normalize(glm::vec3(dx, dy, dz));
 }
 
-void DualContouring::DebugDrawVertices(const std::vector<float>& vertices, std::weak_ptr<ACamera> curCamera, std::weak_ptr<Settings> settings)
+void DualContouring::DebugDrawVertices(const std::vector<float>& vertices, std::weak_ptr<ACamera> curCamera, const Settings& settings)
 {
 	//DEBUG: Spawn cube at vertex positions
-	if (settings.lock()->bIsDebugEnabled)
+	if (settings.bIsDebugEnabled)
 	{
 
 		float cubeVertices[] = {
@@ -232,7 +232,7 @@ void DualContouring::DebugDrawVertices(const std::vector<float>& vertices, std::
 }
 
 void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<float>& normals,
-	std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent)
+	std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent, const Settings& settings)
 {
 	//Clear any index mapping data before generating mesh in case already generated the mesh
 	ClearHashMapData();
@@ -552,7 +552,7 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 								//Triangle 1
 
 								// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
-								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								if (settings.bShouldFlatShade)
 								{
 									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
 									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1]]);
@@ -618,7 +618,7 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 									modelDuplicateVertices.push_back(modelVertices[vertexIndices[2]]);*/
 
 									// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
-								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								if (settings.bShouldFlatShade)
 								{
 
 									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
@@ -685,7 +685,7 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 								//modelDuplicateVertices.push_back(modelVertices[vertexIndices[3]]);*/
 
 								// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
-								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								if (settings.bShouldFlatShade)
 								{
 
 									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
@@ -750,7 +750,7 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 								//modelDuplicateVertices.push_back(modelVertices[vertexIndices[1]]);*/
 
 								// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
-								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								if (settings.bShouldFlatShade)
 								{
 
 									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
@@ -821,8 +821,8 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 	//Finally assign the mesh details
 
 	//Set vertices to duplicate mode or indices mode
-	vertices = (Settings::bIsDuplicateVerticesDebugEnabled) ? modelDuplicateVertices : modelVertices;
-	normals = (Settings::bIsDuplicateVerticesDebugEnabled) ? modelDuplicateNormals : modelNormals;
+	vertices = (settings.bShouldFlatShade) ? modelDuplicateVertices : modelVertices;
+	normals = (settings.bShouldFlatShade) ? modelDuplicateNormals : modelNormals;
 	indices = modelIndices;
 	colors = modelVertexColors;
 
@@ -830,7 +830,7 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 }
 
 void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>& normals,
-	std::vector<unsigned int>& indices, std::vector<float>& colors)
+	std::vector<unsigned int>& indices, std::vector<float>& colors, const Settings& settings)
 {
 	ClearHashMapData();
 
@@ -874,15 +874,6 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 
 				//Get hermite data for corners
 				std::array < HermiteData, 8> voxelCornersHermiteData = voxelToCornerHermiteDataMap[GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)];
-
-				/*if (x == 3 && y == 3 && z == 5)
-				{
-					std::cout << "Update Mesh: Voxel Corners Distance Values";
-					for (int i = 0; i < 8; i++)
-					{
-						std::cout << voxelCornersHermiteData[i].distance << ",";
-					}
-				}*/
 
 
 				std::vector<glm::vec3> intersectionPoints;
@@ -974,46 +965,46 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 
 				}
 
-					//In the case there is an intersection for any of the 3 adjacent edges, map the voxel to the adjacent edges, else don't.
-					if (!bNoIntersectionFor3AdjacentEdges)
-					{
-						//Map voxel to adjacent edges hermite data array
-						voxelToEdgesHermiteDataMap[GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)] = adjacentEdgeHermiteData;
-					}
+				//In the case there is an intersection for any of the 3 adjacent edges, map the voxel to the adjacent edges, else don't.
+				if (!bNoIntersectionFor3AdjacentEdges)
+				{
+					//Map voxel to adjacent edges hermite data array
+					voxelToEdgesHermiteDataMap[GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)] = adjacentEdgeHermiteData;
+				}
 
-					//Calculate the best vertex using Quadratic error function
-					glm::vec3 vertexPos(0.f);
-					vertexPos = QEFSolver::ComputeBestVertexPosition(allEdgeHermiteData);
+				//Calculate the best vertex using Quadratic error function
+				glm::vec3 vertexPos(0.f);
+				vertexPos = QEFSolver::ComputeBestVertexPosition(allEdgeHermiteData);
 
-					//Calculate centroid of intersection normals
-					glm::vec3 vertexNormal(0.f);
-					for (const glm::vec3& normal : intersectionNormals)
-						vertexNormal += normal;
+				//Calculate centroid of intersection normals
+				glm::vec3 vertexNormal(0.f);
+				for (const glm::vec3& normal : intersectionNormals)
+					vertexNormal += normal;
 
-					vertexNormal = glm::normalize(vertexNormal);
+				vertexNormal = glm::normalize(vertexNormal);
 
-					//SANITY CHECK: CHECK IF CURRENT UNIQUE ID HAS ALREADY BEEN SET FOR VOXEL-VERTEX MAP
-					if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)) != voxelVertexIndexMap.end())
-					{
-						std::cout << "ERROR: THIS UNIQUE ID HAS ALREADY BEEN SET\n";
-					}
+				//SANITY CHECK: CHECK IF CURRENT UNIQUE ID HAS ALREADY BEEN SET FOR VOXEL-VERTEX MAP
+				if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)) != voxelVertexIndexMap.end())
+				{
+					std::cout << "ERROR: THIS UNIQUE ID HAS ALREADY BEEN SET\n";
+				}
 
-					//Map voxel to vertex array index position
-					voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)] = static_cast<int>(modelVertices.size());
+				//Map voxel to vertex array index position
+				voxelVertexIndexMap[GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)] = static_cast<int>(modelVertices.size());
 
-					//std::cout << "New Vertex: " << modelVertices.size() / 3<<", ";
+				//std::cout << "New Vertex: " << modelVertices.size() / 3<<", ";
 
-					//Store vertex position relative to grid space
-					modelVertices.push_back(vertexPos.x);
-					modelVertices.push_back(vertexPos.y);
-					modelVertices.push_back(vertexPos.z);
+				//Store vertex position relative to grid space
+				modelVertices.push_back(vertexPos.x);
+				modelVertices.push_back(vertexPos.y);
+				modelVertices.push_back(vertexPos.z);
 
-					//std::cout << "Vertex added, model vertices size" << modelVertices.size();
+				//std::cout << "Vertex added, model vertices size" << modelVertices.size();
 
-					//Store model normals
-					modelNormals.push_back(vertexNormal.x);
-					modelNormals.push_back(vertexNormal.y);
-					modelNormals.push_back(vertexNormal.z);
+				//Store model normals
+				modelNormals.push_back(vertexNormal.x);
+				modelNormals.push_back(vertexNormal.y);
+				modelNormals.push_back(vertexNormal.z);
 
 
 				}
@@ -1083,7 +1074,7 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 								//Triangle 1
 
 								// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
-								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								if (settings.bShouldFlatShade)
 								{
 									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
 									modelDuplicateVertices.push_back(modelVertices[actualVertexIndices[1]]);
@@ -1149,7 +1140,7 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 									modelDuplicateVertices.push_back(modelVertices[vertexIndices[2]]);*/
 
 									// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
-								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								if (settings.bShouldFlatShade)
 								{
 
 									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
@@ -1216,7 +1207,7 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 								//modelDuplicateVertices.push_back(modelVertices[vertexIndices[3]]);*/
 
 								// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
-								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								if (settings.bShouldFlatShade)
 								{
 
 									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
@@ -1281,7 +1272,7 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 								//modelDuplicateVertices.push_back(modelVertices[vertexIndices[1]]);*/
 
 								// enable duplicate vertices || //Used for glDrawArrays rather than glDrawElements
-								if (Settings::bIsDuplicateVerticesDebugEnabled)
+								if (settings.bShouldFlatShade)
 								{
 
 									//Pos 1 (pairs of 3 floats i.e. a 3D vector)
@@ -1352,8 +1343,8 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 	//Finally assign the mesh details
 
 	//Set vertices to duplicate mode or indices mode
-	vertices = (Settings::bIsDuplicateVerticesDebugEnabled) ? modelDuplicateVertices : modelVertices;
-	normals = (Settings::bIsDuplicateVerticesDebugEnabled) ? modelDuplicateNormals : modelNormals;
+	vertices = (settings.bShouldFlatShade) ? modelDuplicateVertices : modelVertices;
+	normals = (settings.bShouldFlatShade) ? modelDuplicateNormals : modelNormals;
 	indices = modelIndices;
 	colors = modelVertexColors;
 

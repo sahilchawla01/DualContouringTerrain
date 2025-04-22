@@ -379,7 +379,7 @@ void App::init()
 		//Render the terrain
 		{
 			//Render dual contouring vertices
-			dualContouring.DebugDrawVertices(m_terrainActor->GetVertices(), m_currentCamera, std::make_shared<Settings>(settings));
+			dualContouring.DebugDrawVertices(m_terrainActor->GetVertices(), m_currentCamera, settings);
 
 			//Regenerate mesh behavior based on app state
 			if (m_currentAppState == EAppState::Modelling)
@@ -388,10 +388,12 @@ void App::init()
 				if (!terrainSDFComponent.expired() && terrainSDFComponent.lock()->GetShouldRegenerateMesh())
 				{
 					//Generate the mesh based on the new SDF
-					dualContouring.InitGenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent);
+					dualContouring.InitGenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent, settings);
 
 					//Set up the mesh component after generating the mesh
 					m_terrainActor->SetupMeshComponent((settings.bShouldFlatShade ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+					//Set object color
+					m_terrainActor->GetMeshComponent().lock()->SetObjectColor(glm::vec3(0.5f, 1.0f, 0.75f));
 
 					//Unset flag to regenerate mesh
 					terrainSDFComponent.lock()->SetShouldRegenerateMesh(false);
@@ -452,10 +454,28 @@ void App::init()
 							dualContouring.ApplyBrushToVoxels(1.f, userBrushSphere->GetWorldPosition());
 
 							//Update the mesh based on the updated field
-							dualContouring.UpdateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+							dualContouring.UpdateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, settings);
 
 							//Set up the mesh component after generating the mesh
 							m_terrainActor->SetupMeshComponent((settings.bShouldFlatShade ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+							//Set object color
+							m_terrainActor->GetMeshComponent().lock()->SetObjectColor(glm::vec3(0.5f, 1.0f, 0.75f));
+						}
+
+						//Otherwise, if any changes occur in the regenerate the mesh (such as switching between shading model)
+						if (!terrainSDFComponent.expired() && terrainSDFComponent.lock()->GetShouldRegenerateMesh())
+						{
+							//Update the mesh based on the updated field
+							dualContouring.UpdateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, settings);
+
+							//Set up the mesh component after generating the mesh
+							m_terrainActor->SetupMeshComponent((settings.bShouldFlatShade ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+							//Set object color
+							m_terrainActor->GetMeshComponent().lock()->SetObjectColor(glm::vec3(0.5f, 1.0f, 0.75f));
+
+
+							//Unset flag to regenerate mesh
+							terrainSDFComponent.lock()->SetShouldRegenerateMesh(false);
 						}
 					}
 

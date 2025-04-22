@@ -35,13 +35,12 @@ public:
 
 	static const glm::vec3 GetIntersectionPoint(const glm::vec3& firstPosition, const glm::vec3& secondPosition, const glm::vec3& spherePosition, const float& sphereRadius, int totalSteps = 100);
 	static const glm::vec3 CalculateSurfaceNormal(const glm::vec3& intersectionPos, std::weak_ptr<USDFComponent> actorSdfComponent);
-	const glm::vec3 EvaluateNormalFromVoxelSDF(glm::vec3 queryPoint);
 	//Generates mesh initially
-	void InitGenerateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent);
+	void InitGenerateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent, const Settings& settings);
 	//Updates mesh depending on any edits made to the SDF using user-inputs
-	void UpdateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices, std::vector<float>& colors);
+	void UpdateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices, std::vector<float>& colors, const Settings& settings);
 	void ApplyBrushToVoxels(const float& sphereRadius, const glm::vec3& sphereCenter);
-	void DebugDrawVertices(const std::vector<float>& vertices,  std::weak_ptr<ACamera> curCamera, std::weak_ptr<Settings> settings);
+	void DebugDrawVertices(const std::vector<float>& vertices,  std::weak_ptr<ACamera> curCamera, const Settings& settings);
 
 	//Maps a voxel (unique index from x,y,z pos) to 3 front-most adjacent edge's hermite data
 	std::unordered_map<int, std::array<HermiteData, 3>> voxelToEdgesHermiteDataMap;
@@ -55,8 +54,6 @@ private:
 	float m_voxelResolution = 1.0f;
 
 	std::unordered_map<int, int> voxelVertexIndexMap;
-
-	std::weak_ptr<Settings> settings;
 
 private:
 	static int GetUniqueIndexForGrid(const int x, const int y, const int z, const int gridWidth, const int gridHeight);
