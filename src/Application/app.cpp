@@ -264,7 +264,15 @@ void App::init()
 			{
 				ImGui::Checkbox("Enable Debug", &settings.bIsDebugEnabled);
 				ImGui::Checkbox("Enable Voxel Debug", &settings.bIsVoxelDebugEnabled);
-				ImGui::Checkbox("Enable SDF Mesh Rendering", &settings.bViewMesh);
+				if(ImGui::Button("Switch Shading Mode"))
+				{
+					//Flip shading flag
+					settings.bShouldFlatShade = !settings.bShouldFlatShade;
+
+					//Update the mesh shader 
+					terrainSDFComponent.lock()->SetShouldRegenerateMesh(true);
+				}
+				//ImGui::Checkbox("Enable SDF Mesh Rendering", &settings.bViewMesh);
 			}
 
 			//Only show individual SDF settings if the app state is in modelling
@@ -383,7 +391,7 @@ void App::init()
 					dualContouring.InitGenerateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, terrainSDFComponent);
 
 					//Set up the mesh component after generating the mesh
-					m_terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+					m_terrainActor->SetupMeshComponent((settings.bShouldFlatShade ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
 
 					//Unset flag to regenerate mesh
 					terrainSDFComponent.lock()->SetShouldRegenerateMesh(false);
@@ -447,7 +455,7 @@ void App::init()
 							dualContouring.UpdateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
 
 							//Set up the mesh component after generating the mesh
-							m_terrainActor->SetupMeshComponent((Settings::bIsDuplicateVerticesDebugEnabled ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
+							m_terrainActor->SetupMeshComponent((settings.bShouldFlatShade ? EShaderOption::flat_shade : EShaderOption::lit), terrainVertices, terrainNormals, terrainIndices, terrainDebugColors);
 						}
 					}
 

@@ -9,6 +9,7 @@ public:
 
 	bool bIsCursorEnabled = false;
 	bool bIsDebugEnabled = false;
+	bool bShouldFlatShade = false;
 	static bool bIsDuplicateVerticesDebugEnabled;
 	bool bIsVoxelDebugEnabled = false;
 	//TODO: Eventually move to actor class
