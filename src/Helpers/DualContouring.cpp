@@ -1417,10 +1417,48 @@ void DualContouring::ApplyBrushToVoxels(const float& sphereRadius, const glm::ve
 						}
 						case EBrushType::SoftBrushAdd:
 						{
+							// Calculate distance from center (normalized to [0,1] at brush edge)
+							float distToCenter = glm::distance(voxelCornersHermiteData[i].position, sphereCenter);
+							float normalizedDist = distToCenter / sphereRadius;
+
+							// Skip if completely outside brush influence
+							if (normalizedDist >= 1.0f) break;
+
+							// Gaussian function with finite support
+							float falloff = exp(-3.0f * normalizedDist * normalizedDist); 
+							float brushInfluence = (1.0f - normalizedDist) * falloff;
+
+							// Blend with existing SDF
+							float newSDF = voxelCornersHermiteData[i].distance - brushInfluence * sphereRadius;
+
+							if (newSDF < voxelCornersHermiteData[i].distance) {
+								voxelCornersHermiteData[i].distance = newSDF;
+								voxelCornersHermiteData[i].normal = SphereBrush::CalculateSurfaceNormal(
+									voxelCornersHermiteData[i].position, sphereCenter, sphereRadius);
+							}
 							break;
 						}
 						case EBrushType::SoftBrushSubtract:
 						{
+							// Calculate distance from center (normalized to [0,1] at brush edge)
+							float distToCenter = glm::distance(voxelCornersHermiteData[i].position, sphereCenter);
+							float normalizedDist = distToCenter / sphereRadius;
+
+							// Skip if completely outside brush influence
+							if (normalizedDist >= 1.0f) break;
+
+							// Gaussian function with finite support
+							float falloff = exp(-3.0f * normalizedDist * normalizedDist);
+							float brushInfluence = (1.0f - normalizedDist) * falloff;
+
+							// Blend with existing SDF (note the + sign for "subtracting")
+							float newSDF = voxelCornersHermiteData[i].distance + brushInfluence * sphereRadius;
+
+							if (newSDF > voxelCornersHermiteData[i].distance) {
+								voxelCornersHermiteData[i].distance = newSDF;
+								voxelCornersHermiteData[i].normal = SphereBrush::CalculateSurfaceNormal(
+									voxelCornersHermiteData[i].position, sphereCenter, sphereRadius);
+							}
 							break;
 						}
 						default:
