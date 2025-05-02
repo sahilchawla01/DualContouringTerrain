@@ -373,9 +373,13 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 
 						//Get current intersection point by using linear interpolation
 						float interpolateFactor = abs(cornerSDFValues[cornerIndex1]) / (abs(cornerSDFValues[cornerIndex1]) + abs(cornerSDFValues[cornerIndex2]));
+						interpolateFactor = glm::clamp(interpolateFactor, 0.0f, 1.0f);
+
 						glm::vec3 currIntersectionPoint = cornerPos1 + ((cornerPos2 - cornerPos1) * interpolateFactor);
+
 						intersectionPoints.push_back(currIntersectionPoint);
 
+					
 						//TODO: SAnity check whether point is within voxel
 
 						//Calculate normal using Finite Sum Difference
@@ -918,8 +922,8 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 					}
 
 					float interpolateFactor = abs(corner1HermiteData.distance) / (abs(corner1HermiteData.distance) + abs(corner2HermiteData.distance));
+					interpolateFactor = glm::clamp(interpolateFactor, 0.0f, 1.0f);
 
-					//Get current intersection point by using linear interpolation
 					glm::vec3 currIntersectionPoint = corner1HermiteData.position + ((corner2HermiteData.position - corner1HermiteData.position) * interpolateFactor);
 
 					intersectionPoints.push_back(currIntersectionPoint);

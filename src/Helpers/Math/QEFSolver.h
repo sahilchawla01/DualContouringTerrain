@@ -30,18 +30,45 @@ public:
         if (glm::abs(determinant) < 1e-6f) { // Small determinant means nearly singular
             std::cout << "Rank deficient case detected. Using centroid instead.\n";
 
-            glm::vec3 x(0.0);
+            glm::vec3 pos(0.0);
 
              //Get centroid of intersection positions 
              for (const auto& data: hermiteDataPoints)
-	        	x += data.position;
+	        	pos += data.position;
 
-            x = x / static_cast<float>(hermiteDataPoints.size());
-            return x;
+            pos = pos / static_cast<float>(hermiteDataPoints.size());
+            return pos;
         }
 
         // Solve the system A^T A * x = A^T b
         glm::vec3 x = glm::inverse(ATA) * ATb; // Solve for x using matrix inverse
+
+        
+        glm::vec3 minBound(FLT_MAX), maxBound(-FLT_MAX);
+
+        for (const auto& data : hermiteDataPoints) 
+        {
+            minBound = glm::min(minBound, data.position);
+            maxBound = glm::max(maxBound, data.position);
+        }
+
+        // Sanity: Check if x lies within voxel bounds (with a small margin)
+        const float epsilon = 1e-3f;
+        if (x.x < minBound.x - epsilon || x.x > maxBound.x + epsilon ||
+            x.y < minBound.y - epsilon || x.y > maxBound.y + epsilon ||
+            x.z < minBound.z - epsilon || x.z > maxBound.z + epsilon)
+        {
+            std::cout << "Outside voxel bounds! Returning to centroid.\n";
+            glm::vec3 pos(0.0);
+
+            //Get centroid of intersection positions 
+            for (const auto& data : hermiteDataPoints)
+                pos += data.position;
+
+            pos = pos / static_cast<float>(hermiteDataPoints.size());
+            return pos;
+        }
+
 
         return x;
 

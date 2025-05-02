@@ -110,7 +110,7 @@ void App::init()
 	if (!terrainSDFComponent.expired())
 	{
 		//terrainSDFComponent.lock()->AddSDF<BoxSDF>(glm::vec3(-3.2f, 4.8f, -3.2f), glm::vec3(1.0f));
-		terrainSDFComponent.lock()->AddSDF<SphereSDF>(glm::vec3(0), 3.0f);
+		terrainSDFComponent.lock()->AddSDF<SphereSDF>(glm::vec3(0.0f, -0.4f, 1.74f), 2.78f);
 	}
 
 	// Setup dual contouring grid
