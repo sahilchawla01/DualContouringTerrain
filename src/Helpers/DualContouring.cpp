@@ -301,11 +301,6 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 						//Get current corner's position in world space
 						glm::vec3 currentCornerPos = (voxelCornerOffsets[i] * this->m_voxelResolution) + relativePos;
 
-						if (actorSdfComponent.expired())
-						{
-							std::cout << "\nError, ACTOR SDF COMPONENT EXPIRED";
-						}
-
 						//Calculate signed distance of current corner
 						float distanceValue = actorSdfComponent.lock()->EvaluateSDF(currentCornerPos);
 						cornerSDFValues[i] = distanceValue;
@@ -329,15 +324,6 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 
 					//Store the corner hermite data in a map
 					voxelToCornerHermiteDataMap[GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)] = voxelCornersHermiteData;
-
-					/*if (x == 3 && y == 3 && z == 5)
-					{
-						std::cout << "Init Generate Mesh: Voxel Corners Distance Values";
-						for (int i = 0; i < 8; i++)
-						{
-							std::cout << voxelCornersHermiteData[i].distance << ",";
-						}
-					}*/
 
 					//If the voxel is completely within the surface, or outside the volume, ignore it.
 					if (cornersToConsider == 0 || cornersToConsider == 255)
@@ -459,6 +445,11 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 						vertexNormal += normal;
 
 					vertexNormal = glm::normalize(vertexNormal);
+
+					if (allEdgeHermiteData.empty())
+					{
+						std::cout << ".";
+					}
 
 					//SANITY CHECK: CHECK IF CURRENT UNIQUE ID HAS ALREADY BEEN SET FOR VOXEL-VERTEX MAP
 					if (voxelVertexIndexMap.find(GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)) != voxelVertexIndexMap.end())
@@ -874,6 +865,22 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 
 				//Get hermite data for corners
 				std::array < HermiteData, 8> voxelCornersHermiteData = voxelToCornerHermiteDataMap[GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)];
+
+				int cornersToConsider = 0;
+
+				//Check if voxel is completely inside or outside the surface
+				for (int idx = 0; idx < 8; ++idx)
+				{
+					//If within the surface, consider for triangulation
+					if (voxelCornersHermiteData[idx].distance <= 0.f)
+					{
+						cornersToConsider |= 1 << idx;
+					}
+				}
+
+				//Skip this voxel because it is completely inside/outside the surface
+				if (cornersToConsider == 0 || cornersToConsider == 255)
+					continue;
 
 
 				std::vector<glm::vec3> intersectionPoints;
@@ -1373,15 +1380,6 @@ void DualContouring::ApplyBrushToVoxels(const float& sphereRadius, const glm::ve
 			{
 				//Get SDF values at corner of this voxel
 				std::array < HermiteData, 8>& voxelCornersHermiteData = voxelToCornerHermiteDataMap[GetUniqueIndexForGrid(x, y, z, expandedGridWidth, expandedGridHeight)];
-
-			/*	if (x == 3 && y == 3 && z == 5)
-				{
-					std::cout << "Apply Brush to Voxel: Voxel Corners Distance Values";
-					for (int i = 0; i < 8; i++)
-					{
-						std::cout << voxelCornersHermiteData[i].distance << ",";
-					}
-				}*/
 
 				for (int i = 0; i < 8; ++i)
 				{
