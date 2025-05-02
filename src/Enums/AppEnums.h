@@ -7,3 +7,11 @@ enum class EAppState
 	//The app state where the SDFs have been finalized, and the user is now editing the created grid
 	Editing
 };
+
+enum class EBrushType
+{
+	HardBrushAdd,
+	HardBrushSubtract,
+	SoftBrushAdd,
+	SoftBrushSubtract
+};

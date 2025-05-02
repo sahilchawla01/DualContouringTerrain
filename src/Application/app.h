@@ -41,6 +41,7 @@ private:
 	std::shared_ptr<AActor> m_terrainActor;
 	SphereBrush m_sphereBrush; 
 	RayCastResult m_userBrushRaycastResult;
+	EBrushType m_brushType = EBrushType::HardBrushAdd;
 
 	int window_width = 1200;
 	int window_height = 1080;

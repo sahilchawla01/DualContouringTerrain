@@ -275,6 +275,7 @@ void App::init()
 				//ImGui::Checkbox("Enable SDF Mesh Rendering", &settings.bViewMesh);
 			}
 
+
 			//Only show individual SDF settings if the app state is in modelling
 			if (m_currentAppState == EAppState::Modelling && ImGui::CollapsingHeader("Terrain SDFs"))
 			{
@@ -367,6 +368,48 @@ void App::init()
 			{
 				ImGui::Text("Distance to Brush Depth Plane");
 				ImGui::InputFloat(":", &distanceToUserBrushPlane, 0.25f, 1.0f);
+
+				ImGui::Spacing();
+				ImGui::Spacing();
+				ImGui::Text("Brush Type");
+				static int brushType = 0;
+				
+				ImGui::RadioButton("Hard Brush - Add", &brushType, 0);
+				ImGui::SameLine();
+				ImGui::RadioButton("Hard Brush - Subtract", &brushType, 1);
+
+				ImGui::RadioButton("Soft Brush - Add", &brushType, 2);
+				ImGui::SameLine();
+				ImGui::RadioButton("Soft Brush - Subtract", &brushType, 3);
+
+				//Map integer to enum and store brush type enum 
+				{
+					switch (brushType)
+					{
+						case 0:
+						{
+							m_brushType = EBrushType::HardBrushAdd;
+							break;
+						}
+						case 1:
+						{
+							m_brushType = EBrushType::HardBrushSubtract;
+							break;
+						}
+						case 2:
+						{
+							m_brushType = EBrushType::SoftBrushAdd;
+							break;
+						}
+						case 3:
+						{
+							m_brushType = EBrushType::SoftBrushSubtract;
+							break;
+						}
+					default:
+						m_brushType = EBrushType::HardBrushAdd;
+					}
+				}
 			}
 
 
@@ -451,7 +494,7 @@ void App::init()
 							m_sphereBrush.bUpdateSDF = false;
 
 							//Update voxel field based on brush
-							dualContouring.ApplyBrushToVoxels(1.f, userBrushSphere->GetWorldPosition());
+							dualContouring.ApplyBrushToVoxels(1.f, userBrushSphere->GetWorldPosition(), m_brushType);
 
 							//Update the mesh based on the updated field
 							dualContouring.UpdateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, settings);

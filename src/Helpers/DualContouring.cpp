@@ -9,6 +9,7 @@
 #include "Shader.h"
 #include "Brushes/SphereBrush.h"
 #include "Components/USDFComponent.h"
+#include "Enums/AppEnums.h"
 #include "Math/QEFSolver.h"
 #include "Math/RNG.h"
 #include "Math/SDF.h"
@@ -920,10 +921,13 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 
 					//Get current intersection point by using linear interpolation
 					glm::vec3 currIntersectionPoint = corner1HermiteData.position + ((corner2HermiteData.position - corner1HermiteData.position) * interpolateFactor);
+
 					intersectionPoints.push_back(currIntersectionPoint);
 
 					//Calculate normal by using linear interpolation
 					const glm::vec3 intersectionNormal = glm::normalize(glm::mix(corner1HermiteData.normal, corner2HermiteData.normal, interpolateFactor));
+
+					intersectionNormals.push_back(intersectionNormal);
 
 					//Crossing over has occured, check if edge is one of the 3 adjacent left most corner ones, and set the value.
 					if (i == 0)
@@ -1357,7 +1361,7 @@ void DualContouring::UpdateMesh(std::vector<float>& vertices, std::vector<float>
 
 }
 
-void DualContouring::ApplyBrushToVoxels(const float& sphereRadius, const glm::vec3& sphereCenter)
+void DualContouring::ApplyBrushToVoxels(const float& sphereRadius, const glm::vec3& sphereCenter, EBrushType brushType)
 {
 
 	int expandedGridWidth = static_cast<int>(static_cast<float>(this->m_gridWidth) * (1 / this->m_voxelResolution));
@@ -1384,15 +1388,48 @@ void DualContouring::ApplyBrushToVoxels(const float& sphereRadius, const glm::ve
 				for (int i = 0; i < 8; ++i)
 				{
 
-					//Use union operation
-					const float brushSDF = SphereBrush::EvaluateBrushSDF(voxelCornersHermiteData[i].position, sphereCenter, sphereRadius);
+					float brushSDF = SphereBrush::EvaluateBrushSDF(voxelCornersHermiteData[i].position, sphereCenter, sphereRadius);
 
-					if (brushSDF < voxelCornersHermiteData[i].distance)
+					switch (brushType)
 					{
-						voxelCornersHermiteData[i].distance = brushSDF;
-						voxelCornersHermiteData[i].normal = SphereBrush::CalculateSurfaceNormal(voxelCornersHermiteData[i].position, sphereCenter, sphereRadius);
+						case EBrushType::HardBrushAdd:
+						{
+							//Use union operation
+							if (brushSDF < voxelCornersHermiteData[i].distance)
+							{
+								voxelCornersHermiteData[i].distance = brushSDF;
+								voxelCornersHermiteData[i].normal = SphereBrush::CalculateSurfaceNormal(voxelCornersHermiteData[i].position, sphereCenter, sphereRadius);
+							}
+							break;
+						}
+						case EBrushType::HardBrushSubtract:
+						{
+							//Subtract
+
+							brushSDF *= -1.0f;
+
+							if (brushSDF > voxelCornersHermiteData[i].distance)
+							{
+								voxelCornersHermiteData[i].distance = brushSDF;
+								voxelCornersHermiteData[i].normal = SphereBrush::CalculateSurfaceNormal(voxelCornersHermiteData[i].position, sphereCenter, sphereRadius);
+							}
+							break;
+						}
+						case EBrushType::SoftBrushAdd:
+						{
+							break;
+						}
+						case EBrushType::SoftBrushSubtract:
+						{
+							break;
+						}
+						default:
+						{
+							break;
+						}
 					}
-					
+
+			
 
 				}
 

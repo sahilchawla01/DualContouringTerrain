@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
+enum class EBrushType;
 class USDFComponent;
 
 //Describes the data for a given intersection point
@@ -39,7 +40,7 @@ public:
 	void InitGenerateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices, std::vector<float>& colors, const std::weak_ptr<USDFComponent> actorSdfComponent, const Settings& settings);
 	//Updates mesh depending on any edits made to the SDF using user-inputs
 	void UpdateMesh(std::vector<float>& vertices, std::vector<float>& normals, std::vector<unsigned int>& indices, std::vector<float>& colors, const Settings& settings);
-	void ApplyBrushToVoxels(const float& sphereRadius, const glm::vec3& sphereCenter);
+	void ApplyBrushToVoxels(const float& sphereRadius, const glm::vec3& sphereCenter, EBrushType brushType);
 	void DebugDrawVertices(const std::vector<float>& vertices,  std::weak_ptr<ACamera> curCamera, const Settings& settings);
 
 	//Maps a voxel (unique index from x,y,z pos) to 3 front-most adjacent edge's hermite data
