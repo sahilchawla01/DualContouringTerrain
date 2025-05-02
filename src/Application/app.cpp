@@ -307,6 +307,9 @@ void App::init()
 
 			if (m_currentAppState == EAppState::Editing)
 			{
+
+				ImGui::Checkbox("Enable Editing:", &settings.bIsEditingEnabled);
+
 				ImGui::Text("Distance to Brush Depth Plane");
 				ImGui::InputFloat(":", &distanceToUserBrushPlane, 0.25f, 1.0f);
 
@@ -432,7 +435,7 @@ void App::init()
 				//Setup and render a spherical brush
 				{
 
-					if (settings.bIsCursorEnabled)
+					if (settings.bIsCursorEnabled && settings.bIsEditingEnabled)
 					{
 						glm::vec2 ndcCoords = GetCursorPosNDC(window);
 						m_userBrushRaycastResult = RaycastForBrushPlane(ndcCoords.x, ndcCoords.y);

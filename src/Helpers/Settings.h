@@ -8,6 +8,7 @@ public:
 	float mouse_pitch = 0.f;
 
 	bool bIsCursorEnabled = false;
+	bool bIsEditingEnabled = true;
 	bool bIsDebugEnabled = false;
 	bool bShouldFlatShade = false;
 	bool bIsVoxelDebugEnabled = false;
