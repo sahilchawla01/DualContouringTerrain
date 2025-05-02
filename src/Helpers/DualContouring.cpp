@@ -379,9 +379,6 @@ void DualContouring::InitGenerateMesh(std::vector<float>& vertices, std::vector<
 
 						intersectionPoints.push_back(currIntersectionPoint);
 
-					
-						//TODO: SAnity check whether point is within voxel
-
 						//Calculate normal using Finite Sum Difference
 						const glm::vec3 intersectionNormal = CalculateSurfaceNormal(currIntersectionPoint, actorSdfComponent);
 						intersectionNormals.push_back(intersectionNormal);
@@ -1377,7 +1374,6 @@ void DualContouring::ApplyBrushToVoxels(const float& sphereRadius, const glm::ve
 	glm::mat4 gridModelMatrix(1.f);
 	gridModelMatrix = glm::translate(gridModelMatrix, gridPosition);
 
-	glm::vec3 gridCenter((this->m_gridWidth) / 2, (this->m_gridHeight) / 2, (this->m_gridDepth) / 2);
 
 	//Generate vertex positions
 	for (int x = 0; x < expandedGridWidth; x++)

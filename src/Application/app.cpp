@@ -161,74 +161,15 @@ void App::init()
 	m_sphereBrush.bUpdateSDF = false;
 
 
+	float sphereBrushRadius = 1.f;
+
 	//Setup the user brush (sphere)
 	{
 		std::vector<float> vertices;
 		std::vector<float> normals;
 		std::vector<unsigned int> indices;
-		float radius = 1.f;
-		int sectorCount = 16;
-		int stackCount = 16;
 
-		float x, y, z, xy;                              // vertex position
-		float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
-
-		float sectorStep = 2.f * glm::pi<float>() / sectorCount;
-		float stackStep = glm::pi<float>() / stackCount;
-		float sectorAngle, stackAngle;
-
-		for (int i = 0; i <= stackCount; ++i)
-		{
-			stackAngle = glm::pi<float>() / 2 - i * stackStep;        // starting from pi/2 to -pi/2
-			xy = radius * cosf(stackAngle);             // r * cos(u)
-			z = radius * sinf(stackAngle);              // r * sin(u)
-
-			// add (sectorCount+1) vertices per stack
-			// first and last vertices have same position and normal, but different tex coords
-			for (int j = 0; j <= sectorCount; ++j)
-			{
-				sectorAngle = j * sectorStep;           // starting from 0 to 2pi
-
-				// vertex position (x, y, z)
-				x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
-				y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
-				vertices.push_back(x);
-				vertices.push_back(y);
-				vertices.push_back(z);
-
-				// normalized vertex normal (nx, ny, nz)
-				nx = x * lengthInv;
-				ny = y * lengthInv;
-				nz = z * lengthInv;
-				normals.push_back(nx);
-				normals.push_back(ny);
-				normals.push_back(nz);
-
-			}
-		}
-
-		for (int i = 0; i < stackCount; ++i)
-		{
-			int k1 = i * (sectorCount + 1);     // beginning of current stack
-			int k2 = k1 + sectorCount + 1;      // beginning of next stack
-
-			for (int j = 0; j < sectorCount; ++j, ++k1, ++k2)
-			{
-				// 2 triangles per quad (not for top and bottom stacks)
-				if (i != 0) {
-					indices.push_back(k1);
-					indices.push_back(k2);
-					indices.push_back(k1 + 1);
-				}
-
-				if (i != (stackCount - 1)) {
-					indices.push_back(k1 + 1);
-					indices.push_back(k2);
-					indices.push_back(k2 + 1);
-				}
-			}
-		}
-
+		SphereBrush::GenerateSphereMesh(vertices, normals, indices, sphereBrushRadius);
 
 		userBrushSphere->SetupMeshComponent(EShaderOption::lit, vertices, normals, indices);
 		userBrushSphere->GetMeshComponent().lock()->SetObjectColor(glm::vec3(0.5f, 0.5f, 1.0f));
@@ -369,6 +310,19 @@ void App::init()
 				ImGui::Text("Distance to Brush Depth Plane");
 				ImGui::InputFloat(":", &distanceToUserBrushPlane, 0.25f, 1.0f);
 
+				ImGui::Text("Sphere Brush Radius:");
+				if (ImGui::InputFloat(":##1", &sphereBrushRadius, 0.25f, 1.0f))
+				{
+					std::vector<float> vertices;
+					std::vector<float> normals;
+					std::vector<unsigned int> indices;
+
+					SphereBrush::GenerateSphereMesh(vertices, normals, indices, sphereBrushRadius);
+
+					userBrushSphere->SetupMeshComponent(EShaderOption::lit, vertices, normals, indices);
+					userBrushSphere->GetMeshComponent().lock()->SetObjectColor(glm::vec3(0.5f, 0.5f, 1.0f));
+				}
+
 				ImGui::Spacing();
 				ImGui::Spacing();
 				ImGui::Text("Brush Type");
@@ -494,7 +448,7 @@ void App::init()
 							m_sphereBrush.bUpdateSDF = false;
 
 							//Update voxel field based on brush
-							dualContouring.ApplyBrushToVoxels(1.f, userBrushSphere->GetWorldPosition(), m_brushType);
+							dualContouring.ApplyBrushToVoxels(sphereBrushRadius, userBrushSphere->GetWorldPosition(), m_brushType);
 
 							//Update the mesh based on the updated field
 							dualContouring.UpdateMesh(terrainVertices, terrainNormals, terrainIndices, terrainDebugColors, settings);
