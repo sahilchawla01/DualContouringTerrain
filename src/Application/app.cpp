@@ -119,7 +119,7 @@ void App::init()
 
 	const int gridSize = 15;
 
-	DualContouring dualContouring(gridSize, gridSize, gridSize, 0.5f);
+	DualContouring dualContouring(gridSize, gridSize, gridSize, 0.25f);
 
 	//Create the user-brush depth plane
 	m_userBrushDepthPlane = std::make_shared<AActor>("User-brush Depth Plane", m_currentCamera, m_currentCamera->GetCameraWorldPosition(), glm::vec3(6.0), glm::vec3(90, 0, 0));
@@ -484,7 +484,8 @@ void App::init()
 				//Render the terrain mesh
 				m_terrainActor->Render();
 				//Render transparent object last
-				m_userBrushDepthPlane->Render();
+				if (settings.bIsEditingEnabled)
+					m_userBrushDepthPlane->Render();
 
 			}
 			
